@@ -2,6 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
+const packageRoutes = require('./routes/packageRoutes');
 
 const app = express();
 app.use(cors());
@@ -13,10 +14,9 @@ mongoose
   .then(() => console.log('MongoDB connected'))
   .catch((err) => console.log('MongoDB connection error:', err));
 
-// Routes
 app.use('/api', userRoutes);
+app.use('/api', packageRoutes);
 
-// Test endpoint
 app.get('/api/tryserver', (req, res) => {
   res.json({ message: 'wew' });
 });
