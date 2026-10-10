@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     phone: { type: String },
     address: { type: String },
-    role: { type: String, default: 'customer' },
+    role: { type: String, default: 'guest' },
     status: { type: String, default: 'active' },
     resetToken: { type: String },
     resetExpires: { type: Date },

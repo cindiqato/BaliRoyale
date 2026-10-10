@@ -68,7 +68,7 @@ const register = async (req, res) => {
       password: hashedPassword,
       phone,
       address,
-      role: 'customer',
+      role: 'guest',
     });
 
     await newUser.save();
