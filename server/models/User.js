@@ -10,6 +10,8 @@ const UserSchema = new mongoose.Schema(
     address: { type: String },
     role: { type: String, default: 'customer' },
     status: { type: String, default: 'active' },
+    resetToken: { type: String },
+    resetExpires: { type: Date },
     isArchived: { type: Boolean, default: false },
   },
   { timestamps: true }
