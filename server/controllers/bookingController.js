@@ -286,6 +286,207 @@ const noShowBooking = async (req, res) => {
   }
 };
 
+// ---------- CANCEL REQUEST ----------
+
+const requestCancel = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    // Only the owner can request
+    if (booking.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+      return res.status(400).json({ error: 'This booking can no longer be cancelled' });
+    }
+
+    if (booking.cancelRequested) {
+      return res.status(400).json({ error: 'Cancellation already requested' });
+    }
+
+    booking.cancelRequested = true;
+    booking.cancelReason = req.body.reason || 'No reason provided';
+    booking.cancelStatus = 'pending';
+    booking.statusHistory.push({
+      status: 'cancel_requested',
+      changedBy: req.user.id,
+      remarks: booking.cancelReason,
+    });
+
+    await booking.save();
+    res.json({ message: 'Cancellation requested', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const approveCancel = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (!booking.cancelRequested || booking.cancelStatus !== 'pending') {
+      return res.status(400).json({ error: 'No pending cancellation request' });
+    }
+
+    booking.cancelStatus = 'approved';
+    booking.isActiveConfirmed = false;
+    booking.status = 'cancelled';
+    booking.statusHistory.push({
+      status: 'cancelled',
+      changedBy: req.user.id,
+      remarks: 'Cancellation approved',
+    });
+
+    await booking.save();
+    res.json({ message: 'Cancellation approved', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const rejectCancel = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (!booking.cancelRequested || booking.cancelStatus !== 'pending') {
+      return res.status(400).json({ error: 'No pending cancellation request' });
+    }
+
+    booking.cancelStatus = 'rejected';
+    booking.cancelRequested = false;
+    booking.statusHistory.push({
+      status: 'cancel_rejected',
+      changedBy: req.user.id,
+      remarks: req.body.reason || 'Cancellation rejected',
+    });
+
+    await booking.save();
+    res.json({ message: 'Cancellation rejected', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ---------- RESCHEDULE REQUEST ----------
+
+const requestReschedule = async (req, res) => {
+  try {
+    const { newDate, newStartTime, newEndTime, reason } = req.body;
+
+    if (!newDate || !newStartTime || !newEndTime) {
+      return res.status(400).json({ error: 'New date and time required' });
+    }
+
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.user.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+      return res.status(400).json({ error: 'This booking can no longer be rescheduled' });
+    }
+
+    if (booking.rescheduleRequested) {
+      return res.status(400).json({ error: 'Reschedule already requested' });
+    }
+
+    booking.rescheduleRequested = true;
+    booking.newDate = newDate;
+    booking.newStartTime = newStartTime;
+    booking.newEndTime = newEndTime;
+    booking.rescheduleReason = reason || 'No reason provided';
+    booking.rescheduleStatus = 'pending';
+    booking.statusHistory.push({
+      status: 'reschedule_requested',
+      changedBy: req.user.id,
+      remarks: `Requested ${newDate} ${newStartTime}-${newEndTime}`,
+    });
+
+    await booking.save();
+    res.json({ message: 'Reschedule requested', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const approveReschedule = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (!booking.rescheduleRequested || booking.rescheduleStatus !== 'pending') {
+      return res.status(400).json({ error: 'No pending reschedule request' });
+    }
+
+    // Update booking to new date/time
+    booking.bookingDate = booking.newDate;
+    booking.startTime = booking.newStartTime;
+    booking.endTime = booking.newEndTime;
+
+    booking.rescheduleStatus = 'approved';
+    booking.rescheduleRequested = false;
+    booking.newDate = undefined;
+    booking.newStartTime = undefined;
+    booking.newEndTime = undefined;
+
+    booking.statusHistory.push({
+      status: 'reschedule_approved',
+      changedBy: req.user.id,
+      remarks: 'Reschedule approved',
+    });
+
+    await booking.save();
+    res.json({ message: 'Reschedule approved', booking });
+  } catch (err) {
+    console.log(err);
+    if (err.code === 11000) {
+      return res.status(409).json({
+        error: 'Another confirmed booking already exists for the requested date and time',
+      });
+    }
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+const rejectReschedule = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (!booking.rescheduleRequested || booking.rescheduleStatus !== 'pending') {
+      return res.status(400).json({ error: 'No pending reschedule request' });
+    }
+
+    booking.rescheduleStatus = 'rejected';
+    booking.rescheduleRequested = false;
+    booking.newDate = undefined;
+    booking.newStartTime = undefined;
+    booking.newEndTime = undefined;
+
+    booking.statusHistory.push({
+      status: 'reschedule_rejected',
+      changedBy: req.user.id,
+      remarks: req.body.reason || 'Reschedule rejected',
+    });
+
+    await booking.save();
+    res.json({ message: 'Reschedule rejected', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   createBooking,
   checkAvailability,
@@ -296,4 +497,10 @@ module.exports = {
   checkInBooking,
   completeBooking,
   noShowBooking,
+  requestCancel,
+  approveCancel,
+  rejectCancel,
+  requestReschedule,
+  approveReschedule,
+  rejectReschedule,
 };
