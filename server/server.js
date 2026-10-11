@@ -4,6 +4,7 @@ const cors = require('cors');
 const userRoutes = require('./routes/userRoutes');
 const packageRoutes = require('./routes/packageRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 app.use(cors());
@@ -18,6 +19,9 @@ mongoose
 app.use('/api', userRoutes);
 app.use('/api', packageRoutes);
 app.use('/api', bookingRoutes);
+app.use('/api', paymentRoutes);
+
+app.use('/uploads', express.static('uploads'));
 
 app.get('/api/tryserver', (req, res) => {
   res.json({ message: 'wew' });
