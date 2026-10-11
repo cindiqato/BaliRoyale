@@ -169,10 +169,131 @@ const getBookingById = async (req, res) => {
   }
 };
 
+// ---------- WORKFLOW: CONFIRM ----------
+
+const confirmBooking = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.status !== 'pending') {
+      return res.status(400).json({ error: 'Only pending bookings can be confirmed' });
+    }
+
+    // Flip the flag — the unique index will block overlaps here
+    booking.isActiveConfirmed = true;
+    booking.status = 'confirmed';
+    booking.statusHistory.push({
+      status: 'confirmed',
+      changedBy: req.user.id,
+      remarks: 'Booking confirmed by admin',
+    });
+
+    await booking.save();
+    res.json({ message: 'Booking confirmed', booking });
+  } catch (err) {
+    console.log(err);
+    if (err.code === 11000) {
+      return res.status(409).json({
+        error: 'Another confirmed booking already exists for this date and time',
+      });
+    }
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ---------- WORKFLOW: CHECK-IN ----------
+
+const checkInBooking = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({ error: 'Only confirmed bookings can be checked in' });
+    }
+
+    booking.status = 'checked_in';
+    booking.statusHistory.push({
+      status: 'checked_in',
+      changedBy: req.user.id,
+      remarks: 'Guest checked in',
+    });
+
+    await booking.save();
+    res.json({ message: 'Checked in', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ---------- WORKFLOW: COMPLETE ----------
+
+const completeBooking = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.status !== 'checked_in') {
+      return res.status(400).json({ error: 'Only checked-in bookings can be completed' });
+    }
+
+    // Free up the slot — no longer blocks future bookings
+    booking.isActiveConfirmed = false;
+    booking.status = 'completed';
+    booking.statusHistory.push({
+      status: 'completed',
+      changedBy: req.user.id,
+      remarks: 'Booking completed',
+    });
+
+    await booking.save();
+    res.json({ message: 'Booking completed', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ---------- WORKFLOW: NO-SHOW ----------
+
+const noShowBooking = async (req, res) => {
+  try {
+    const booking = await BookingModel.findById(req.params.id);
+    if (!booking) return res.status(404).json({ error: 'Booking not found' });
+
+    if (booking.status !== 'confirmed') {
+      return res.status(400).json({ error: 'Only confirmed bookings can be marked no-show' });
+    }
+
+    booking.isActiveConfirmed = false;
+    booking.status = 'no_show';
+    booking.depositStatus = 'deducted';
+    booking.depositDeduction = booking.pricing.securityDeposit;
+    booking.depositReason = 'No-show — deposit forfeited';
+    booking.statusHistory.push({
+      status: 'no_show',
+      changedBy: req.user.id,
+      remarks: 'Guest did not show up',
+    });
+
+    await booking.save();
+    res.json({ message: 'Marked as no-show', booking });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   createBooking,
   checkAvailability,
   getMyBookings,
   getAllBookings,
   getBookingById,
+  confirmBooking,
+  checkInBooking,
+  completeBooking,
+  noShowBooking,
 };
