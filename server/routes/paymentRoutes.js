@@ -21,5 +21,12 @@ router.get(
 
 // Admin
 router.get('/payments', auth, admin, paymentController.getAllPayments);
+router.put('/payments/:id/verify', auth, admin, paymentController.verifyPayment);
+router.put('/payments/:id/reject', auth, admin, paymentController.rejectPayment);
+router.post('/payments/cash', auth, admin, paymentController.recordCashPayment);
+
+// Deposit actions live on the booking
+router.put('/bookings/:id/deposit-return', auth, admin, paymentController.returnDeposit);
+router.put('/bookings/:id/deposit-deduct', auth, admin, paymentController.deductDeposit);
 
 module.exports = router;
