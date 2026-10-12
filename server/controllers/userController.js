@@ -5,6 +5,8 @@ const { logAction } = require('./auditLogController');
 
 const JWT_SECRET = 'baliroyale_secret_key';
 
+const sendBookingEmail = require('../middleware/mailer');
+
 // ---------- CRUD ----------
 
 const getUsers = (req, res) => {
@@ -189,6 +191,96 @@ const getMe = async (req, res) => {
   }
 };
 
+// ---------- FORGOT PASSWORD ----------
+
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    const user = await UserModel.findOne({ email });
+
+    // Always respond with success to avoid leaking which emails exist
+    if (!user) {
+      return res.json({
+        message: 'If the email exists, a reset link has been sent',
+      });
+    }
+
+    // Generate a token
+    const token =
+      Math.random().toString(36).substring(2, 15) +
+      Math.random().toString(36).substring(2, 15);
+
+    user.resetToken = token;
+    user.resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    await user.save();
+
+    const resetLink = `http://localhost:3000/reset-password/${token}`;
+
+    await sendBookingEmail({
+      to: user.email,
+      subject: 'Bali Royale — Password Reset',
+      html: `
+        <h2>Reset your password</h2>
+        <p>Hi ${user.firstName},</p>
+        <p>You requested a password reset. Click the link below to set a new password:</p>
+        <p><a href="${resetLink}">${resetLink}</a></p>
+        <p>This link expires in 1 hour. If you didn't request this, you can ignore this email.</p>
+        <p>— Bali Royale</p>
+      `,
+    });
+
+    res.json({
+      message: 'If the email exists, a reset link has been sent',
+      // For local testing only — remove before final presentation
+      resetToken: token,
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
+// ---------- RESET PASSWORD ----------
+
+const resetPassword = async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token and new password required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+
+    const user = await UserModel.findOne({
+      resetToken: token,
+      resetExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      return res.status(400).json({ error: 'Invalid or expired token' });
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    user.password = hashed;
+    user.resetToken = undefined;
+    user.resetExpires = undefined;
+    await user.save();
+
+    res.json({ message: 'Password reset successful' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 module.exports = {
   getUsers,
   createUser,
@@ -197,4 +289,6 @@ module.exports = {
   register,
   login,
   getMe,
+  forgotPassword,
+  resetPassword,
 };
