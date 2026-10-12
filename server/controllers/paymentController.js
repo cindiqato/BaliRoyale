@@ -1,7 +1,6 @@
 const PaymentModel = require('../models/Payment');
 const BookingModel = require('../models/Booking');
-
-// ---------- SUBMIT PAYMENT (guest) ----------
+const { logAction } = require('./auditLogController');
 
 const submitPayment = async (req, res) => {
   try {
@@ -45,8 +44,6 @@ const submitPayment = async (req, res) => {
   }
 };
 
-// ---------- GET MY PAYMENTS (guest) ----------
-
 const getMyPayments = async (req, res) => {
   try {
     const payments = await PaymentModel.find({
@@ -63,8 +60,6 @@ const getMyPayments = async (req, res) => {
   }
 };
 
-// ---------- GET ALL PAYMENTS (admin) ----------
-
 const getAllPayments = async (req, res) => {
   try {
     const payments = await PaymentModel.find({ isArchived: false })
@@ -79,14 +74,11 @@ const getAllPayments = async (req, res) => {
   }
 };
 
-// ---------- GET PAYMENTS FOR ONE BOOKING ----------
-
 const getPaymentsByBooking = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
-    // Owner or admin only
     if (
       req.user.role !== 'admin' &&
       booking.user.toString() !== req.user.id
@@ -106,8 +98,6 @@ const getPaymentsByBooking = async (req, res) => {
   }
 };
 
-// ---------- VERIFY PAYMENT (admin) ----------
-
 const verifyPayment = async (req, res) => {
   try {
     const payment = await PaymentModel.findById(req.params.id);
@@ -122,7 +112,6 @@ const verifyPayment = async (req, res) => {
     payment.verifiedAt = new Date();
     await payment.save();
 
-    // Update the booking's paymentStatus
     const booking = await BookingModel.findById(payment.booking);
     if (booking) {
       const allPayments = await PaymentModel.find({
@@ -143,14 +132,20 @@ const verifyPayment = async (req, res) => {
       await booking.save();
     }
 
+    await logAction({
+      actor: req.user.id,
+      action: 'verify_payment',
+      targetModel: 'payments',
+      targetId: payment._id,
+      details: `Verified ${payment.type} of ${payment.amount}`,
+    });
+
     res.json({ message: 'Payment verified', payment });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-// ---------- REJECT PAYMENT (admin) ----------
 
 const rejectPayment = async (req, res) => {
   try {
@@ -173,14 +168,20 @@ const rejectPayment = async (req, res) => {
     payment.verifiedAt = new Date();
     await payment.save();
 
+    await logAction({
+      actor: req.user.id,
+      action: 'reject_payment',
+      targetModel: 'payments',
+      targetId: payment._id,
+      details: `Rejected: ${reason}`,
+    });
+
     res.json({ message: 'Payment rejected', payment });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-// ---------- RECORD CASH PAYMENT (admin) ----------
 
 const recordCashPayment = async (req, res) => {
   try {
@@ -203,14 +204,13 @@ const recordCashPayment = async (req, res) => {
       type,
       amount,
       method: 'cash',
-      status: 'verified', // cash is auto-verified
+      status: 'verified',
       verifiedBy: req.user.id,
       verifiedAt: new Date(),
     });
 
     await payment.save();
 
-    // Update booking paymentStatus
     const allPayments = await PaymentModel.find({
       booking: booking._id,
       status: 'verified',
@@ -232,8 +232,6 @@ const recordCashPayment = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-// ---------- RETURN DEPOSIT (admin) ----------
 
 const returnDeposit = async (req, res) => {
   try {
@@ -262,8 +260,6 @@ const returnDeposit = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-// ---------- DEDUCT DEPOSIT (admin) ----------
 
 const deductDeposit = async (req, res) => {
   try {
@@ -294,7 +290,7 @@ const deductDeposit = async (req, res) => {
     booking.statusHistory.push({
       status: 'deposit_deducted',
       changedBy: req.user.id,
-      remarks: `Deducted ₱${amount}: ${reason}`,
+      remarks: `Deducted ${amount}: ${reason}`,
     });
 
     await booking.save();

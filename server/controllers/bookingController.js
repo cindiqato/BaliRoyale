@@ -1,13 +1,11 @@
 const BookingModel = require('../models/Booking');
 const PackageModel = require('../models/Package');
+const { logAction } = require('./auditLogController');
 
-// Generate a short booking reference
 const generateBookingRef = () => {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   return 'BR-' + Date.now().toString().slice(-6) + '-' + random;
 };
-
-// ---------- CREATE BOOKING (guest only) ----------
 
 const createBooking = async (req, res) => {
   try {
@@ -40,11 +38,10 @@ const createBooking = async (req, res) => {
       });
     }
 
-    // Pricing calculation
     const baseRate = pkg.baseRate;
     const excessGuests = Math.max(0, guestCount - pkg.includedPax);
     const excessPaxFee = excessGuests * pkg.excessPaxRate;
-    const addOnsFee = 0; // add-ons pricing later
+    const addOnsFee = 0;
     const securityDeposit = 3000;
     const totalAmount = baseRate + excessPaxFee + addOnsFee + securityDeposit;
     const downPayment = Math.round(totalAmount * 0.5);
@@ -86,8 +83,6 @@ const createBooking = async (req, res) => {
   }
 };
 
-// ---------- CHECK AVAILABILITY (public) ----------
-
 const checkAvailability = async (req, res) => {
   try {
     const { packageId, bookingDate, startTime } = req.body;
@@ -110,8 +105,6 @@ const checkAvailability = async (req, res) => {
   }
 };
 
-// ---------- GET MY BOOKINGS (guest) ----------
-
 const getMyBookings = async (req, res) => {
   try {
     const bookings = await BookingModel.find({
@@ -128,8 +121,6 @@ const getMyBookings = async (req, res) => {
   }
 };
 
-// ---------- GET ALL BOOKINGS (admin) ----------
-
 const getAllBookings = async (req, res) => {
   try {
     const bookings = await BookingModel.find({ isArchived: false })
@@ -144,8 +135,6 @@ const getAllBookings = async (req, res) => {
   }
 };
 
-// ---------- GET ONE BOOKING ----------
-
 const getBookingById = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.id)
@@ -154,7 +143,6 @@ const getBookingById = async (req, res) => {
 
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
-    // Only the owner or admin can view
     if (
       req.user.role !== 'admin' &&
       booking.user._id.toString() !== req.user.id
@@ -169,8 +157,6 @@ const getBookingById = async (req, res) => {
   }
 };
 
-// ---------- WORKFLOW: CONFIRM ----------
-
 const confirmBooking = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.id);
@@ -180,7 +166,6 @@ const confirmBooking = async (req, res) => {
       return res.status(400).json({ error: 'Only pending bookings can be confirmed' });
     }
 
-    // Flip the flag — the unique index will block overlaps here
     booking.isActiveConfirmed = true;
     booking.status = 'confirmed';
     booking.statusHistory.push({
@@ -190,6 +175,15 @@ const confirmBooking = async (req, res) => {
     });
 
     await booking.save();
+
+    await logAction({
+      actor: req.user.id,
+      action: 'confirm_booking',
+      targetModel: 'bookings',
+      targetId: booking._id,
+      details: `Confirmed booking ${booking.bookingRef}`,
+    });
+
     res.json({ message: 'Booking confirmed', booking });
   } catch (err) {
     console.log(err);
@@ -201,8 +195,6 @@ const confirmBooking = async (req, res) => {
     res.status(500).json({ error: 'Internal Server Error' });
   }
 };
-
-// ---------- WORKFLOW: CHECK-IN ----------
 
 const checkInBooking = async (req, res) => {
   try {
@@ -228,8 +220,6 @@ const checkInBooking = async (req, res) => {
   }
 };
 
-// ---------- WORKFLOW: COMPLETE ----------
-
 const completeBooking = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.id);
@@ -239,7 +229,6 @@ const completeBooking = async (req, res) => {
       return res.status(400).json({ error: 'Only checked-in bookings can be completed' });
     }
 
-    // Free up the slot — no longer blocks future bookings
     booking.isActiveConfirmed = false;
     booking.status = 'completed';
     booking.statusHistory.push({
@@ -256,8 +245,6 @@ const completeBooking = async (req, res) => {
   }
 };
 
-// ---------- WORKFLOW: NO-SHOW ----------
-
 const noShowBooking = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.id);
@@ -271,7 +258,7 @@ const noShowBooking = async (req, res) => {
     booking.status = 'no_show';
     booking.depositStatus = 'deducted';
     booking.depositDeduction = booking.pricing.securityDeposit;
-    booking.depositReason = 'No-show — deposit forfeited';
+    booking.depositReason = 'No-show - deposit forfeited';
     booking.statusHistory.push({
       status: 'no_show',
       changedBy: req.user.id,
@@ -286,14 +273,11 @@ const noShowBooking = async (req, res) => {
   }
 };
 
-// ---------- CANCEL REQUEST ----------
-
 const requestCancel = async (req, res) => {
   try {
     const booking = await BookingModel.findById(req.params.id);
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
-    // Only the owner can request
     if (booking.user.toString() !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -374,8 +358,6 @@ const rejectCancel = async (req, res) => {
   }
 };
 
-// ---------- RESCHEDULE REQUEST ----------
-
 const requestReschedule = async (req, res) => {
   try {
     const { newDate, newStartTime, newEndTime, reason } = req.body;
@@ -428,7 +410,6 @@ const approveReschedule = async (req, res) => {
       return res.status(400).json({ error: 'No pending reschedule request' });
     }
 
-    // Update booking to new date/time
     booking.bookingDate = booking.newDate;
     booking.startTime = booking.newStartTime;
     booking.endTime = booking.newEndTime;

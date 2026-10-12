@@ -5,6 +5,8 @@ const userRoutes = require('./routes/userRoutes');
 const packageRoutes = require('./routes/packageRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const archiveRoutes = require('./routes/archiveRoutes');
+const auditLogRoutes = require('./routes/auditLogRoutes');
 
 const app = express();
 app.use(cors());
@@ -20,6 +22,8 @@ app.use('/api', userRoutes);
 app.use('/api', packageRoutes);
 app.use('/api', bookingRoutes);
 app.use('/api', paymentRoutes);
+app.use('/api', archiveRoutes);
+app.use('/api', auditLogRoutes);
 
 app.use('/uploads', express.static('uploads'));
 
