@@ -1,10 +1,11 @@
 const UserModel = require('../models/User');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const { logAction } = require('./auditLogController');
 
 const JWT_SECRET = 'baliroyale_secret_key';
 
-// ---------- CRUD (already built) ----------
+// ---------- CRUD ----------
 
 const getUsers = (req, res) => {
   UserModel.find()
@@ -15,33 +16,90 @@ const getUsers = (req, res) => {
     });
 };
 
-const createUser = (req, res) => {
-  const newUser = new UserModel(req.body);
-  newUser
-    .save()
-    .then((user) => res.json(user))
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: 'Internal Server Error' });
+const createUser = async (req, res) => {
+  try {
+    const { firstName, lastName, email, password, phone, address, role } = req.body;
+
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    const existing = await UserModel.findOne({ email });
+    if (existing) {
+      return res.status(400).json({ error: 'Email already registered' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = new UserModel({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      phone,
+      address,
+      role: role || 'guest',
     });
+
+    await newUser.save();
+
+    const user = newUser.toObject();
+    delete user.password;
+
+    await logAction({
+      actor: req.user.id,
+      action: 'create_user',
+      targetModel: 'users',
+      targetId: newUser._id,
+      details: `Created ${role || 'guest'}: ${email}`,
+    });
+
+    res.json({ message: 'User created', user });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };
 
-const updateUser = (req, res) => {
-  UserModel.findByIdAndUpdate(req.params.id, req.body, { new: true })
-    .then((user) => res.json(user))
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: 'Internal Server Error' });
+const updateUser = async (req, res) => {
+  try {
+    const user = await UserModel.findByIdAndUpdate(req.params.id, req.body, {
+      new: true,
     });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    await logAction({
+      actor: req.user.id,
+      action: 'update_user',
+      targetModel: 'users',
+      targetId: user._id,
+      details: `Updated user: ${user.email}`,
+    });
+
+    res.json(user);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };
 
-const deleteUser = (req, res) => {
-  UserModel.findByIdAndDelete(req.params.id)
-    .then(() => res.json({ message: 'User deleted' }))
-    .catch((err) => {
-      console.log(err);
-      res.status(500).json({ error: 'Internal Server Error' });
+const deleteUser = async (req, res) => {
+  try {
+    await UserModel.findByIdAndDelete(req.params.id);
+
+    await logAction({
+      actor: req.user.id,
+      action: 'deactivate_user',
+      targetModel: 'users',
+      targetId: req.params.id,
+      details: 'Deactivated user',
     });
+
+    res.json({ message: 'User deleted' });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 };
 
 // ---------- Auth ----------

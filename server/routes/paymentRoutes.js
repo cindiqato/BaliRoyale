@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const paymentController = require('../controllers/paymentController');
 const auth = require('../middleware/auth');
-const admin = require('../middleware/admin');
+const staffOrAdmin = require('../middleware/staffOrAdmin');
 const upload = require('../middleware/upload');
 
 // Guest
@@ -19,14 +19,14 @@ router.get(
   paymentController.getPaymentsByBooking
 );
 
-// Admin
-router.get('/payments', auth, admin, paymentController.getAllPayments);
-router.put('/payments/:id/verify', auth, admin, paymentController.verifyPayment);
-router.put('/payments/:id/reject', auth, admin, paymentController.rejectPayment);
-router.post('/payments/cash', auth, admin, paymentController.recordCashPayment);
+// Staff or Admin
+router.get('/payments', auth, staffOrAdmin, paymentController.getAllPayments);
+router.put('/payments/:id/verify', auth, staffOrAdmin, paymentController.verifyPayment);
+router.put('/payments/:id/reject', auth, staffOrAdmin, paymentController.rejectPayment);
+router.post('/payments/cash', auth, staffOrAdmin, paymentController.recordCashPayment);
 
-// Deposit actions live on the booking
-router.put('/bookings/:id/deposit-return', auth, admin, paymentController.returnDeposit);
-router.put('/bookings/:id/deposit-deduct', auth, admin, paymentController.deductDeposit);
+// Deposit actions
+router.put('/bookings/:id/deposit-return', auth, staffOrAdmin, paymentController.returnDeposit);
+router.put('/bookings/:id/deposit-deduct', auth, staffOrAdmin, paymentController.deductDeposit);
 
 module.exports = router;
