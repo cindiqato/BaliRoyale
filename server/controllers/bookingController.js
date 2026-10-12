@@ -1,6 +1,8 @@
 const BookingModel = require('../models/Booking');
 const PackageModel = require('../models/Package');
+const UserModel = require('../models/User');
 const { logAction } = require('./auditLogController');
+const sendBookingEmail = require('../middleware/mailer');
 
 const generateBookingRef = () => {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
@@ -145,6 +147,7 @@ const getBookingById = async (req, res) => {
 
     if (
       req.user.role !== 'admin' &&
+      req.user.role !== 'staff' &&
       booking.user._id.toString() !== req.user.id
     ) {
       return res.status(403).json({ error: 'Access denied' });
@@ -171,7 +174,7 @@ const confirmBooking = async (req, res) => {
     booking.statusHistory.push({
       status: 'confirmed',
       changedBy: req.user.id,
-      remarks: 'Booking confirmed by admin',
+      remarks: 'Booking confirmed',
     });
 
     await booking.save();
@@ -183,6 +186,28 @@ const confirmBooking = async (req, res) => {
       targetId: booking._id,
       details: `Confirmed booking ${booking.bookingRef}`,
     });
+
+    const guest = await UserModel.findById(booking.user);
+    if (guest) {
+      await sendBookingEmail({
+        to: guest.email,
+        subject: `Booking Confirmed — ${booking.bookingRef}`,
+        html: `
+          <h2>Your booking is confirmed!</h2>
+          <p>Hi ${guest.firstName},</p>
+          <p>Your reservation at <strong>Bali Royale Private Resort</strong> is confirmed.</p>
+          <ul>
+            <li><strong>Booking Reference:</strong> ${booking.bookingRef}</li>
+            <li><strong>Date:</strong> ${new Date(booking.bookingDate).toDateString()}</li>
+            <li><strong>Time:</strong> ${booking.startTime} – ${booking.endTime}</li>
+            <li><strong>Guests:</strong> ${booking.guestCount}</li>
+            <li><strong>Total Amount:</strong> PHP ${booking.pricing.totalAmount}</li>
+          </ul>
+          <p>Please proceed with your down payment if you haven't yet. We look forward to hosting you!</p>
+          <p>— Bali Royale</p>
+        `,
+      });
+    }
 
     res.json({ message: 'Booking confirmed', booking });
   } catch (err) {
@@ -326,6 +351,30 @@ const approveCancel = async (req, res) => {
     });
 
     await booking.save();
+
+    await logAction({
+      actor: req.user.id,
+      action: 'approve_cancel',
+      targetModel: 'bookings',
+      targetId: booking._id,
+      details: `Approved cancellation for ${booking.bookingRef}`,
+    });
+
+    const guest = await UserModel.findById(booking.user);
+    if (guest) {
+      await sendBookingEmail({
+        to: guest.email,
+        subject: `Booking Cancelled — ${booking.bookingRef}`,
+        html: `
+          <h2>Your booking has been cancelled</h2>
+          <p>Hi ${guest.firstName},</p>
+          <p>Your reservation <strong>${booking.bookingRef}</strong> on ${new Date(booking.bookingDate).toDateString()} has been cancelled.</p>
+          <p>If you have questions, please contact the resort directly.</p>
+          <p>— Bali Royale</p>
+        `,
+      });
+    }
+
     res.json({ message: 'Cancellation approved', booking });
   } catch (err) {
     console.log(err);
@@ -427,6 +476,33 @@ const approveReschedule = async (req, res) => {
     });
 
     await booking.save();
+
+    await logAction({
+      actor: req.user.id,
+      action: 'approve_reschedule',
+      targetModel: 'bookings',
+      targetId: booking._id,
+      details: `Approved reschedule for ${booking.bookingRef}`,
+    });
+
+    const guest = await UserModel.findById(booking.user);
+    if (guest) {
+      await sendBookingEmail({
+        to: guest.email,
+        subject: `Booking Rescheduled — ${booking.bookingRef}`,
+        html: `
+          <h2>Your booking has been rescheduled</h2>
+          <p>Hi ${guest.firstName},</p>
+          <p>Your reservation <strong>${booking.bookingRef}</strong> has been moved to a new schedule:</p>
+          <ul>
+            <li><strong>New Date:</strong> ${new Date(booking.bookingDate).toDateString()}</li>
+            <li><strong>New Time:</strong> ${booking.startTime} – ${booking.endTime}</li>
+          </ul>
+          <p>— Bali Royale</p>
+        `,
+      });
+    }
+
     res.json({ message: 'Reschedule approved', booking });
   } catch (err) {
     console.log(err);
