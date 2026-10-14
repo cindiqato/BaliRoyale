@@ -49,11 +49,18 @@ const createBooking = async (req, res) => {
     const downPayment = Math.round(totalAmount * 0.5);
     const balanceDue = totalAmount - downPayment;
 
+    const normalizedDate = new Date(bookingDate);
+    const bookingDateUTC = new Date(Date.UTC(
+    normalizedDate.getUTCFullYear(),
+    normalizedDate.getUTCMonth(),
+    normalizedDate.getUTCDate()
+    ));
+
     const booking = new BookingModel({
       bookingRef: generateBookingRef(),
       user: req.user.id,
       package: pkg._id,
-      bookingDate,
+      bookingDate: bookingDateUTC,
       startTime,
       endTime,
       guestCount,
@@ -93,9 +100,19 @@ const checkAvailability = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    // Normalize the target date to UTC midnight
+    const targetDate = new Date(bookingDate);
+    const dayStart = new Date(Date.UTC(
+      targetDate.getUTCFullYear(),
+      targetDate.getUTCMonth(),
+      targetDate.getUTCDate()
+    ));
+    const dayEnd = new Date(dayStart);
+    dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
+
     const existing = await BookingModel.findOne({
       package: packageId,
-      bookingDate: new Date(bookingDate),
+      bookingDate: { $gte: dayStart, $lt: dayEnd },
       startTime,
       isActiveConfirmed: true,
     });

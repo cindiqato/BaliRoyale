@@ -13,6 +13,12 @@ import Packages from './pages/public/Packages';
 import PackageDetail from './pages/public/PackageDetail';
 
 import GuestDashboard from './pages/guest/GuestDashboard';
+import NewBooking from './pages/guest/NewBooking';
+import MyBookings from './pages/guest/MyBookings';
+import BookingDetail from './pages/guest/BookingDetail';
+import UploadPayment from './pages/guest/UploadPayment';
+import Profile from './pages/guest/Profile';
+
 import StaffDashboard from './pages/staff/StaffDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 
@@ -31,35 +37,28 @@ function App() {
           <Route path="/packages" element={<Packages />} />
           <Route path="/packages/:id" element={<PackageDetail />} />
 
-          {/* Guest only */}
+          {/* Profile (any logged-in user) */}
           <Route
-            path="/guest"
+            path="/profile"
             element={
-              <ProtectedRoute allowedRoles={['guest']}>
-                <GuestDashboard />
+              <ProtectedRoute allowedRoles={['guest', 'staff', 'admin']}>
+                <Profile />
               </ProtectedRoute>
             }
           />
+
+          {/* Guest only */}
+          <Route path="/guest" element={<ProtectedRoute allowedRoles={['guest']}><GuestDashboard /></ProtectedRoute>} />
+          <Route path="/guest/book" element={<ProtectedRoute allowedRoles={['guest']}><NewBooking /></ProtectedRoute>} />
+          <Route path="/guest/bookings" element={<ProtectedRoute allowedRoles={['guest']}><MyBookings /></ProtectedRoute>} />
+          <Route path="/guest/bookings/:id" element={<ProtectedRoute allowedRoles={['guest']}><BookingDetail /></ProtectedRoute>} />
+          <Route path="/guest/payments/:id" element={<ProtectedRoute allowedRoles={['guest']}><UploadPayment /></ProtectedRoute>} />
 
           {/* Staff only */}
-          <Route
-            path="/staff"
-            element={
-              <ProtectedRoute allowedRoles={['staff']}>
-                <StaffDashboard />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/staff" element={<ProtectedRoute allowedRoles={['staff']}><StaffDashboard /></ProtectedRoute>} />
 
           {/* Admin only */}
-          <Route
-            path="/admin"
-            element={
-              <ProtectedRoute allowedRoles={['admin']}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
         </Routes>
         <Footer />
       </BrowserRouter>
