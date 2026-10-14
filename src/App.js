@@ -9,6 +9,8 @@ import Login from './pages/public/Login';
 import Register from './pages/public/Register';
 import ForgotPassword from './pages/public/ForgotPassword';
 import ResetPassword from './pages/public/ResetPassword';
+import Packages from './pages/public/Packages';
+import PackageDetail from './pages/public/PackageDetail';
 
 import GuestDashboard from './pages/guest/GuestDashboard';
 import StaffDashboard from './pages/staff/StaffDashboard';
@@ -26,6 +28,8 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/reset-password/:token" element={<ResetPassword />} />
+          <Route path="/packages" element={<Packages />} />
+          <Route path="/packages/:id" element={<PackageDetail />} />
 
           {/* Guest only */}
           <Route
