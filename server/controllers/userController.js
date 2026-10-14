@@ -191,6 +191,38 @@ const getMe = async (req, res) => {
   }
 };
 
+const updateProfile = async (req, res) => {
+  try {
+    const { firstName, lastName, phone, address } = req.body;
+
+    const user = await UserModel.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (firstName !== undefined) user.firstName = firstName;
+    if (lastName !== undefined) user.lastName = lastName;
+    if (phone !== undefined) user.phone = phone;
+    if (address !== undefined) user.address = address;
+
+    await user.save();
+
+    const safeUser = user.toObject();
+    delete safeUser.password;
+
+    await logAction({
+      actor: req.user.id,
+      action: 'update_profile',
+      targetModel: 'users',
+      targetId: user._id,
+      details: 'Updated own profile',
+    });
+
+    res.json(safeUser);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
+};
+
 // ---------- FORGOT PASSWORD ----------
 
 const forgotPassword = async (req, res) => {
@@ -203,20 +235,18 @@ const forgotPassword = async (req, res) => {
 
     const user = await UserModel.findOne({ email });
 
-    // Always respond with success to avoid leaking which emails exist
     if (!user) {
       return res.json({
         message: 'If the email exists, a reset link has been sent',
       });
     }
 
-    // Generate a token
     const token =
       Math.random().toString(36).substring(2, 15) +
       Math.random().toString(36).substring(2, 15);
 
     user.resetToken = token;
-    user.resetExpires = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+    user.resetExpires = new Date(Date.now() + 60 * 60 * 1000);
     await user.save();
 
     const resetLink = `http://localhost:3000/reset-password/${token}`;
@@ -236,7 +266,6 @@ const forgotPassword = async (req, res) => {
 
     res.json({
       message: 'If the email exists, a reset link has been sent',
-      // For local testing only — remove before final presentation
       resetToken: token,
     });
   } catch (err) {
@@ -289,6 +318,7 @@ module.exports = {
   register,
   login,
   getMe,
+  updateProfile,
   forgotPassword,
   resetPassword,
 };

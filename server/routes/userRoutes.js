@@ -10,6 +10,7 @@ router.post('/login', userController.login);
 router.post('/forgot-password', userController.forgotPassword);
 router.post('/reset-password', userController.resetPassword);
 router.get('/users/me', auth, userController.getMe);
+router.put('/users/me', auth, userController.updateProfile);
 
 // User CRUD (admin only)
 router.get('/getUsers', auth, admin, userController.getUsers);
