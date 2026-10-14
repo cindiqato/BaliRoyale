@@ -25,6 +25,10 @@ import StaffPayments from './pages/staff/StaffPayments';
 import StaffRequests from './pages/staff/StaffRequests';
 
 import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminPackages from './pages/admin/AdminPackages';
+import AdminArchives from './pages/admin/AdminArchives';
+import AdminAuditLogs from './pages/admin/AdminAuditLogs';
 
 function App() {
   return (
@@ -41,31 +45,28 @@ function App() {
           <Route path="/packages" element={<Packages />} />
           <Route path="/packages/:id" element={<PackageDetail />} />
 
-          {/* Profile (any logged-in user) */}
-          <Route
-            path="/profile"
-            element={
-              <ProtectedRoute allowedRoles={['guest', 'staff', 'admin']}>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
+          {/* Profile */}
+          <Route path="/profile" element={<ProtectedRoute allowedRoles={['guest', 'staff', 'admin']}><Profile /></ProtectedRoute>} />
 
-          {/* Guest only */}
+          {/* Guest */}
           <Route path="/guest" element={<ProtectedRoute allowedRoles={['guest']}><GuestDashboard /></ProtectedRoute>} />
           <Route path="/guest/book" element={<ProtectedRoute allowedRoles={['guest']}><NewBooking /></ProtectedRoute>} />
           <Route path="/guest/bookings" element={<ProtectedRoute allowedRoles={['guest']}><MyBookings /></ProtectedRoute>} />
           <Route path="/guest/bookings/:id" element={<ProtectedRoute allowedRoles={['guest']}><BookingDetail /></ProtectedRoute>} />
           <Route path="/guest/payments/:id" element={<ProtectedRoute allowedRoles={['guest']}><UploadPayment /></ProtectedRoute>} />
 
-          {/* Staff (and admin) */}
+          {/* Staff */}
           <Route path="/staff" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><StaffDashboard /></ProtectedRoute>} />
           <Route path="/staff/bookings" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><StaffBookings /></ProtectedRoute>} />
           <Route path="/staff/payments" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><StaffPayments /></ProtectedRoute>} />
           <Route path="/staff/requests" element={<ProtectedRoute allowedRoles={['staff', 'admin']}><StaffRequests /></ProtectedRoute>} />
 
-          {/* Admin only */}
+          {/* Admin */}
           <Route path="/admin" element={<ProtectedRoute allowedRoles={['admin']}><AdminDashboard /></ProtectedRoute>} />
+          <Route path="/admin/users" element={<ProtectedRoute allowedRoles={['admin']}><AdminUsers /></ProtectedRoute>} />
+          <Route path="/admin/packages" element={<ProtectedRoute allowedRoles={['admin']}><AdminPackages /></ProtectedRoute>} />
+          <Route path="/admin/archives" element={<ProtectedRoute allowedRoles={['admin']}><AdminArchives /></ProtectedRoute>} />
+          <Route path="/admin/auditlogs" element={<ProtectedRoute allowedRoles={['admin']}><AdminAuditLogs /></ProtectedRoute>} />
         </Routes>
         <Footer />
       </BrowserRouter>
