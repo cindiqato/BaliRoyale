@@ -1,6 +1,16 @@
 import { Link } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 
 const Home = () => {
+  const { user } = useAuth();
+
+  const dashboardLink =
+    user?.role === 'admin'
+      ? '/admin'
+      : user?.role === 'staff'
+      ? '/staff'
+      : '/guest';
+
   return (
     <div style={{ maxWidth: '700px', margin: '40px auto', textAlign: 'center', padding: '0 20px' }}>
       <h1>Bali Royale Private Resort</h1>
@@ -10,18 +20,40 @@ const Home = () => {
 
       <hr style={{ margin: '30px 0' }} />
 
-      <h2>Welcome</h2>
+      <h2>Welcome{user ? `, ${user.firstName}` : ''}!</h2>
       <p>
         Book your exclusive resort getaway with ease. View our packages, check
         availability, and reserve your preferred date — all online.
       </p>
 
       <p style={{ marginTop: '30px' }}>
-        <Link to="/packages">
-          <button style={{ padding: '10px 20px', fontSize: '16px' }}>
-            View Packages
-          </button>
-        </Link>
+        {user ? (
+          <>
+            <Link to={dashboardLink}>
+              <button style={{ padding: '10px 20px', fontSize: '16px', marginRight: '10px' }}>
+                Go to Dashboard
+              </button>
+            </Link>
+            <Link to="/packages">
+              <button style={{ padding: '10px 20px', fontSize: '16px' }}>
+                Browse Packages
+              </button>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link to="/packages">
+              <button style={{ padding: '10px 20px', fontSize: '16px', marginRight: '10px' }}>
+                View Packages
+              </button>
+            </Link>
+            <Link to="/register">
+              <button style={{ padding: '10px 20px', fontSize: '16px' }}>
+                Sign Up
+              </button>
+            </Link>
+          </>
+        )}
       </p>
 
       <hr style={{ margin: '30px 0' }} />

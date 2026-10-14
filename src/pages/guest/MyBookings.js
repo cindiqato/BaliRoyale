@@ -27,9 +27,12 @@ const MyBookings = () => {
       {error && <p style={{ color: 'red', textAlign: 'center' }}>{error}</p>}
 
       {!loading && bookings.length === 0 && (
-        <p style={{ textAlign: 'center', marginTop: '30px', color: '#666' }}>
-          You have no bookings yet.
-        </p>
+        <div style={{ textAlign: 'center', marginTop: '30px' }}>
+          <p style={{ color: '#666' }}>You have no bookings yet.</p>
+          <Link to="/guest/book">
+            <button>+ Create Your First Booking</button>
+          </Link>
+        </div>
       )}
 
       <div style={{ marginTop: '20px' }}>

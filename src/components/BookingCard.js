@@ -9,9 +9,24 @@ const statusColors = {
   no_show: '#607d8b',
 };
 
+const paymentColors = {
+  unpaid: '#f44336',
+  partial: '#ff9800',
+  paid: '#4caf50',
+  refunded: '#607d8b',
+};
+
 const BookingCard = ({ booking, linkPrefix = '/guest/bookings' }) => {
   return (
-    <div style={{ border: '1px solid #ddd', background: '#fff', padding: '15px', marginBottom: '15px', textAlign: 'left' }}>
+    <div
+      style={{
+        border: '1px solid #ddd',
+        background: '#fff',
+        padding: '15px',
+        marginBottom: '15px',
+        textAlign: 'left',
+      }}
+    >
       <p style={{ margin: 0 }}>
         <strong>{booking.bookingRef}</strong>
         {' — '}
@@ -29,7 +44,10 @@ const BookingCard = ({ booking, linkPrefix = '/guest/bookings' }) => {
         <strong>Guests:</strong> {booking.guestCount}
       </p>
       <p style={{ margin: '5px 0' }}>
-        <strong>Payment:</strong> {booking.paymentStatus}
+        <strong>Payment:</strong>{' '}
+        <span style={{ color: paymentColors[booking.paymentStatus] || '#333' }}>
+          {booking.paymentStatus}
+        </span>
         {' • '}
         <strong>Deposit:</strong> {booking.depositStatus}
       </p>

@@ -36,11 +36,14 @@ const GuestDashboard = () => {
       )}
 
       <div style={{ marginTop: '30px' }}>
-        <Link to="/packages">
-          <button style={{ marginRight: '10px' }}>Browse Packages</button>
+        <Link to="/guest/book">
+          <button style={{ marginRight: '10px' }}>+ New Booking</button>
         </Link>
         <Link to="/guest/bookings">
-          <button>My Bookings</button>
+          <button style={{ marginRight: '10px' }}>My Bookings</button>
+        </Link>
+        <Link to="/packages">
+          <button>Browse Packages</button>
         </Link>
       </div>
     </div>

@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api from '../../api/axios';
 
 const UploadPayment = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [booking, setBooking] = useState(null);
   const [payments, setPayments] = useState([]);
@@ -63,6 +62,8 @@ const UploadPayment = () => {
       {booking && (
         <p style={{ textAlign: 'center', color: '#666' }}>
           Booking {booking.bookingRef} — Total ₱{booking.pricing.totalAmount.toLocaleString()}
+          <br />
+          Down payment: ₱{booking.pricing.downPayment.toLocaleString()} • Balance: ₱{booking.pricing.balanceDue.toLocaleString()}
         </p>
       )}
 

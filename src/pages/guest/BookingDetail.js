@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import api from '../../api/axios';
 
 const BookingDetail = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
 
   const [booking, setBooking] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -36,6 +35,7 @@ const BookingDetail = () => {
   }, [id]);
 
   const submitCancel = async () => {
+    if (!window.confirm('Request to cancel this booking?')) return;
     setActionMsg('');
     setActionErr('');
     try {
@@ -50,6 +50,7 @@ const BookingDetail = () => {
   };
 
   const submitReschedule = async () => {
+    if (!window.confirm('Request to reschedule this booking?')) return;
     setActionMsg('');
     setActionErr('');
     try {
@@ -96,14 +97,18 @@ const BookingDetail = () => {
       <p>Balance Due: ₱{booking.pricing.balanceDue?.toLocaleString()}</p>
 
       <h3>Status History</h3>
-      <ul>
-        {booking.statusHistory?.map((h, i) => (
-          <li key={i}>
-            <strong>{h.status}</strong> — {new Date(h.changedAt).toLocaleString()}
-            {h.remarks && ` — ${h.remarks}`}
-          </li>
-        ))}
-      </ul>
+      {booking.statusHistory && booking.statusHistory.length > 0 ? (
+        <ul>
+          {booking.statusHistory.map((h, i) => (
+            <li key={i}>
+              <strong>{h.status}</strong> — {new Date(h.changedAt).toLocaleString()}
+              {h.remarks && ` — ${h.remarks}`}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p style={{ color: '#666' }}>No history yet.</p>
+      )}
 
       <hr style={{ margin: '20px 0' }} />
 

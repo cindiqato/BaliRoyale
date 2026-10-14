@@ -11,17 +11,61 @@ const Navbar = () => {
   };
 
   return (
-    <nav style={{ padding: '10px', background: '#fff', borderBottom: '1px solid #ddd', textAlign: 'center' }}>
+    <nav
+      style={{
+        padding: '12px',
+        background: '#fff',
+        borderBottom: '1px solid #ddd',
+        textAlign: 'center',
+      }}
+    >
       <Link to="/">Bali Royale</Link>
       {' | '}
       <Link to="/packages">Packages</Link>
 
-      {user ? (
+      {user && user.role === 'guest' && (
         <>
           {' | '}
-          {user.role === 'admin' && <Link to="/admin">Dashboard</Link>}
-          {user.role === 'staff' && <Link to="/staff">Dashboard</Link>}
-          {user.role === 'guest' && <Link to="/guest">Dashboard</Link>}
+          <Link to="/guest">Dashboard</Link>
+          {' | '}
+          <Link to="/guest/bookings">My Bookings</Link>
+        </>
+      )}
+
+      {user && user.role === 'staff' && (
+        <>
+          {' | '}
+          <Link to="/staff">Dashboard</Link>
+          {' | '}
+          <Link to="/staff/bookings">Bookings</Link>
+          {' | '}
+          <Link to="/staff/payments">Payments</Link>
+          {' | '}
+          <Link to="/staff/requests">Requests</Link>
+        </>
+      )}
+
+      {user && user.role === 'admin' && (
+        <>
+          {' | '}
+          <Link to="/admin">Dashboard</Link>
+          {' | '}
+          <Link to="/staff/bookings">Bookings</Link>
+          {' | '}
+          <Link to="/staff/payments">Payments</Link>
+          {' | '}
+          <Link to="/admin/users">Users</Link>
+          {' | '}
+          <Link to="/admin/packages">Packages</Link>
+          {' | '}
+          <Link to="/admin/archives">Archives</Link>
+          {' | '}
+          <Link to="/admin/auditlogs">Logs</Link>
+        </>
+      )}
+
+      {user ? (
+        <>
           {' | '}
           <Link to="/profile">Profile</Link>
           {' | '}
