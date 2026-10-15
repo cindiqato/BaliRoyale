@@ -1,7 +1,19 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Card, Input, Button, Alert, Form } from 'antd';
+import { MailOutlined, LockOutlined, LoginOutlined } from '@ant-design/icons';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
+
+const C = {
+  green: '#3A4D39',
+  medium: '#4F6F52',
+  cream: '#F4F1EA',
+  white: '#FAFAF8',
+  gray: '#8A7A68',
+  brown: '#6E5A48',
+  border: '#C4BBAF',
+};
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,12 +22,7 @@ const Login = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setError('');
     setLoading(true);
 
@@ -35,109 +42,137 @@ const Login = () => {
   };
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
-      minHeight: '85vh', 
-      backgroundColor: '#F4F1EA' // Soft earthy cream background
-    }}>
-      <div style={{ 
-        maxWidth: '420px', 
-        width: '100%', 
-        margin: '20px', 
-        padding: '36px', 
-        textAlign: 'center', 
-        backgroundColor: '#FFFFFF',
-        borderRadius: '12px',
-        boxShadow: '0 6px 20px rgba(110, 90, 72, 0.1)', // Dirty brown tinted shadow
-        border: '1px solid #E2DCD5'
-      }}>
-        <h2 style={{ color: '#3A4D39', marginBottom: '24px', fontWeight: '700', fontSize: '24px' }}>
-          Welcome Back
-        </h2>
-
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '16px', textAlign: 'left' }}>
-            <input
-              type="email"
-              name="email"
-              placeholder="Email Address"
-              value={form.email}
-              onChange={handleChange}
-              required
-              style={{ 
-                width: '100%', 
-                padding: '12px 16px', 
-                borderRadius: '6px', 
-                border: '1px solid #C4BBAF', // Dirty brown / taupe border
-                outline: 'none',
-                fontSize: '14px',
-                backgroundColor: '#FAFAF8',
-                color: '#333',
-                boxSizing: 'border-box'
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: C.cream,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '40px 20px',
+      }}
+    >
+      <div style={{ width: '100%', maxWidth: '440px' }}>
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.85)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: '20px',
+            border: `1px solid #E2DCD5`,
+            boxShadow: '0 8px 32px 0 rgba(58, 77, 57, 0.08)',
+            textAlign: 'center',
+          }}
+          bodyStyle={{ padding: '36px 28px' }}
+        >
+          <div style={{ marginBottom: '28px' }}>
+            <h2
+              style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '2rem',
+                fontWeight: '600',
+                color: C.green,
+                margin: '0 0 8px 0',
+                letterSpacing: '0.03em',
               }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '16px', textAlign: 'left' }}>
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={form.password}
-              onChange={handleChange}
-              required
-              style={{ 
-                width: '100%', 
-                padding: '12px 16px', 
-                borderRadius: '6px', 
-                border: '1px solid #C4BBAF', 
-                outline: 'none',
-                fontSize: '14px',
-                backgroundColor: '#FAFAF8',
-                color: '#333',
-                boxSizing: 'border-box'
-              }}
-            />
+            >
+              Welcome Back
+            </h2>
+            <p style={{ color: C.brown, fontSize: '0.9rem', margin: 0 }}>
+              Sign in to your Bali Royale account.
+            </p>
           </div>
 
           {error && (
-            <p style={{ color: '#A94442', fontSize: '13px', marginBottom: '16px', textAlign: 'left' }}>
-              {error}
-            </p>
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              closable
+              style={{ marginBottom: 20, textAlign: 'left' }}
+            />
           )}
 
-          <div style={{ marginBottom: '20px' }}>
-            <button 
-              type="submit" 
-              disabled={loading}
-              style={{ 
-                width: '100%', 
-                padding: '12px', 
-                borderRadius: '6px', 
-                border: 'none', 
-                backgroundColor: '#4F6F52', // Deep forest green
-                color: '#FFFFFF', 
-                fontWeight: '600',
-                fontSize: '15px',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'background 0.2s'
+          <Form layout="vertical" onFinish={handleSubmit}>
+            <Form.Item required style={{ marginBottom: 16 }}>
+              <Input
+                size="large"
+                type="email"
+                prefix={<MailOutlined style={{ color: C.gray, marginRight: 4 }} />}
+                placeholder="Email Address"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                style={{
+                  borderRadius: '10px',
+                  borderColor: C.border,
+                  background: C.white,
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item required style={{ marginBottom: 24 }}>
+              <Input.Password
+                size="large"
+                prefix={<LockOutlined style={{ color: C.gray, marginRight: 4 }} />}
+                placeholder="Password"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                style={{
+                  borderRadius: '10px',
+                  borderColor: C.border,
+                  background: C.white,
+                }}
+              />
+            </Form.Item>
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              loading={loading}
+              icon={!loading && <LoginOutlined />}
+              style={{
+                background: C.green,
+                borderColor: C.green,
+                borderRadius: '10px',
+                fontWeight: 600,
+                height: '46px',
               }}
             >
               {loading ? 'Logging in...' : 'Login'}
-            </button>
-          </div>
-        </form>
+            </Button>
+          </Form>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '14px', marginTop: '16px' }}>
-          <Link to="/forgot-password" style={{ color: '#8A7A68', textDecoration: 'none' }}>
-            Forgot password?
-          </Link>
-          <p style={{ margin: 0, color: '#6E5A48' }}>
-            No account yet? <Link to="/register" style={{ color: '#4F6F52', fontWeight: '600', textDecoration: 'none' }}>Register</Link>
-          </p>
-        </div>
+          <div
+            style={{
+              marginTop: '28px',
+              paddingTop: '16px',
+              borderTop: `1px solid #E2DCD5`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+              fontSize: '0.9rem',
+            }}
+          >
+            <Link
+              to="/forgot-password"
+              style={{ color: C.brown, fontWeight: 500 }}
+            >
+              Forgot password?
+            </Link>
+            <p style={{ margin: 0, color: C.brown }}>
+              No account yet?{' '}
+              <Link
+                to="/register"
+                style={{ color: C.medium, fontWeight: 600 }}
+              >
+                Register
+              </Link>
+            </p>
+          </div>
+        </Card>
       </div>
     </div>
   );

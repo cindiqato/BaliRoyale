@@ -1,31 +1,39 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import api from '../../api/axios';
-import { 
-  Card, 
-  Form, 
-  Select, 
-  Input, 
-  InputNumber, 
-  Button, 
-  Typography, 
-  Space, 
-  Divider, 
-  Alert, 
-  Spin, 
-  Descriptions 
+import {
+  Card,
+  Select,
+  Input,
+  Button,
+  Typography,
+  Alert,
+  Spin,
+  Descriptions,
 } from 'antd';
-import { 
-  ArrowLeftOutlined, 
-  CalendarOutlined, 
-  CheckCircleOutlined, 
-  CloseCircleOutlined, 
-  DollarOutlined 
+import {
+  ArrowLeftOutlined,
+  CalendarOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  DollarOutlined,
 } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 const { Option } = Select;
 const { TextArea } = Input;
+
+const C = {
+  green: '#3A4D39',
+  medium: '#4F6F52',
+  gold: '#C5A46D',
+  cream: '#F4F1EA',
+  white: '#FAFAF8',
+  gray: '#6E5A48',
+  brown: '#8A7A68',
+  border: '#C4BBAF',
+  pink: '#F2DCD5',
+};
 
 export default function NewBooking() {
   const navigate = useNavigate();
@@ -72,7 +80,9 @@ export default function NewBooking() {
           setSelectedPkg(initial);
         }
       })
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load packages'))
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load packages')
+      )
       .finally(() => setLoading(false));
   }, [preselectedId]);
 
@@ -101,13 +111,23 @@ export default function NewBooking() {
   const calculatePricing = () => {
     if (!selectedPkg) return null;
     const baseRate = selectedPkg.baseRate;
-    const excessGuests = Math.max(0, form.guestCount - selectedPkg.includedPax);
+    const excessGuests = Math.max(
+      0,
+      form.guestCount - selectedPkg.includedPax
+    );
     const excessPaxFee = excessGuests * selectedPkg.excessPaxRate;
     const securityDeposit = 3000;
     const totalAmount = baseRate + excessPaxFee + securityDeposit;
     const downPayment = Math.round(totalAmount * 0.5);
     const balanceDue = totalAmount - downPayment;
-    return { baseRate, excessPaxFee, securityDeposit, totalAmount, downPayment, balanceDue };
+    return {
+      baseRate,
+      excessPaxFee,
+      securityDeposit,
+      totalAmount,
+      downPayment,
+      balanceDue,
+    };
   };
 
   const pricing = calculatePricing();
@@ -136,7 +156,9 @@ export default function NewBooking() {
       });
       setAvailability(res.data.available);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to check availability');
+      setError(
+        err.response?.data?.error || 'Failed to check availability'
+      );
     } finally {
       setChecking(false);
     }
@@ -160,7 +182,10 @@ export default function NewBooking() {
         specialRequests: form.specialRequests,
       });
       setMessage('Booking created! Redirecting...');
-      setTimeout(() => navigate(`/guest/bookings/${res.data.booking._id}`), 1200);
+      setTimeout(
+        () => navigate(`/guest/bookings/${res.data.booking._id}`),
+        1200
+      );
     } catch (err) {
       setError(err.response?.data?.error || 'Failed to create booking');
     } finally {
@@ -172,7 +197,9 @@ export default function NewBooking() {
     return (
       <div style={{ textAlign: 'center', padding: '60px' }}>
         <Spin size="large" />
-        <p style={{ marginTop: '16px', color: '#6E5A48' }}>Loading booking portal...</p>
+        <p style={{ marginTop: '16px', color: C.gray }}>
+          Loading booking portal...
+        </p>
       </div>
     );
   }
@@ -181,155 +208,273 @@ export default function NewBooking() {
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#F4F1EA',
+        backgroundColor: C.cream,
         color: '#333333',
-        fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+        fontFamily: 'Arial, sans-serif',
         padding: '40px 20px',
       }}
->
-    <div style={{ maxWidth: '700px', margin: '24px auto', padding: '0 16px' }}>
-      <p>
-        <Link to="/guest" style={{ color: '#4F6F52', fontWeight: '500' }}>
-          <ArrowLeftOutlined style={{ marginRight: '6px' }} /> Back to Dashboard
-        </Link>
-      </p>
+    >
+      <div style={{ maxWidth: '700px', margin: '24px auto', padding: '0 16px' }}>
+        <p>
+          <Link to="/guest" style={{ color: C.medium, fontWeight: 500 }}>
+            <ArrowLeftOutlined style={{ marginRight: '6px' }} /> Back to
+            Dashboard
+          </Link>
+        </p>
 
-      <Card 
-        title={<Title level={3} style={{ margin: 0, color: '#333' }}>New Booking</Title>}
-        style={{ borderRadius: '8px', background: '#FAFAF8', border: '1px solid #E2DCD5' }}
-      >
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: '16px' }} />}
-        {message && <Alert message={message} type="success" showIcon style={{ marginBottom: '16px' }} />}
-
-        <form onSubmit={handleSubmit}>
-          {/* Package Selection */}
-          <div style={{ marginBottom: '16px' }}>
-            <label><Text strong style={{ color: '#333' }}>Package</Text></label>
-            <Select
-              value={form.packageId || undefined}
-              onChange={(value) => handleChange('packageId', value)}
-              placeholder="— Select package —"
-              style={{ width: '100%', marginTop: '6px' }}
-              size="large"
-            >
-              {packages.map((p) => (
-                <Option key={p._id} value={p._id}>
-                  {p.name} — ₱{p.baseRate?.toLocaleString()}
-                </Option>
-              ))}
-            </Select>
-          </div>
-
-          {/* Booking Date */}
-          <div style={{ marginBottom: '16px' }}>
-            <label><Text strong style={{ color: '#333' }}>Booking Date</Text></label>
-            <Input
-              type="date"
-              value={form.bookingDate}
-              onChange={(e) => handleChange('bookingDate', e.target.value)}
-              required
-              size="large"
-              style={{ width: '100%', marginTop: '6px' }}
+        <Card
+          title={
+            <Title level={3} style={{ margin: 0, color: C.green }}>
+              New Booking
+            </Title>
+          }
+          style={{
+            borderRadius: '12px',
+            background: C.white,
+            border: `1px solid ${C.border}`,
+          }}
+        >
+          {error && (
+            <Alert
+              message={error}
+              type="error"
+              showIcon
+              style={{ marginBottom: '16px' }}
             />
-          </div>
-
-          {/* Guest Count */}
-          <div style={{ marginBottom: '16px' }}>
-            <label><Text strong style={{ color: '#333' }}>Guest Count</Text></label>
-            <Input
-              type="number"
-              min="1"
-              value={form.guestCount}
-              onChange={(e) => handleChange('guestCount', e.target.value)}
-              required
-              size="large"
-              style={{ width: '100%', marginTop: '6px' }}
+          )}
+          {message && (
+            <Alert
+              message={message}
+              type="success"
+              showIcon
+              style={{ marginBottom: '16px' }}
             />
-          </div>
-
-          {/* Package Quick Info */}
-          {selectedPkg && (
-            <div style={{ background: '#F4F1EA', padding: '12px 16px', borderRadius: '6px', marginBottom: '16px', border: '1px solid #E2DCD5' }}>
-              <Text style={{ color: '#6E5A48', display: 'block' }}>
-                <CalendarOutlined style={{ marginRight: '6px', color: '#4F6F52' }} />
-                <strong>Schedule:</strong> {selectedPkg.startTime} – {selectedPkg.endTime}
-              </Text>
-              <Text style={{ color: '#6E5A48', display: 'block', marginTop: '4px' }}>
-                <strong>Max Pax Allowed:</strong> {selectedPkg.maxPax} (Included: {selectedPkg.includedPax})
-              </Text>
-            </div>
           )}
 
-          {/* Special Requests */}
-          <div style={{ marginBottom: '20px' }}>
-            <label><Text strong style={{ color: '#333' }}>Special Requests (optional)</Text></label>
-            <TextArea
-              rows={3}
-              value={form.specialRequests}
-              onChange={(e) => handleChange('specialRequests', e.target.value)}
-              placeholder="Enter any additional requests or preferences..."
-              style={{ marginTop: '6px' }}
-            />
-          </div>
-
-          {/* Availability Check Button */}
-          {selectedPkg && form.bookingDate && (
-            <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center' }}>
-              <Button
-                type="default"
-                onClick={checkAvailability}
-                loading={checking}
-                style={{ borderColor: '#C4BBAF', color: '#333' }}
+          <form onSubmit={handleSubmit}>
+            {/* Package Selection */}
+            <div style={{ marginBottom: '16px' }}>
+              <label>
+                <Text strong style={{ color: '#333' }}>
+                  Package
+                </Text>
+              </label>
+              <Select
+                value={form.packageId || undefined}
+                onChange={(value) => handleChange('packageId', value)}
+                placeholder="— Select package —"
+                style={{ width: '100%', marginTop: '6px' }}
+                size="large"
               >
-                {checking ? 'Checking...' : 'Check Availability'}
-              </Button>
-
-              {availability === true && (
-                <span style={{ color: '#4F6F52', marginLeft: '12px', fontWeight: 'bold' }}>
-                  <CheckCircleOutlined /> Available
-                </span>
-              )}
-              {availability === false && (
-                <span style={{ color: '#ff4d4f', marginLeft: '12px', fontWeight: 'bold' }}>
-                  <CloseCircleOutlined /> Not available
-                </span>
-              )}
+                {packages.map((p) => (
+                  <Option key={p._id} value={p._id}>
+                    {p.name} — ₱{p.baseRate?.toLocaleString()}
+                  </Option>
+                ))}
+              </Select>
             </div>
-          )}
 
-          {/* Pricing Preview Box */}
-          {pricing && (
-            <div style={{ background: '#F4F1EA', border: '1px solid #E2DCD5', padding: '16px', borderRadius: '6px', marginBottom: '24px' }}>
-              <Title level={5} style={{ marginTop: 0, color: '#333' }}>
-                <DollarOutlined style={{ color: '#3A4D39' }} /> Pricing Preview
-              </Title>
-              <Descriptions column={1} size="small" labelStyle={{ color: '#6E5A48' }}>
-                <Descriptions.Item label="Base Rate">₱{pricing.baseRate.toLocaleString()}</Descriptions.Item>
-                <Descriptions.Item label="Excess Pax Fee">₱{pricing.excessPaxFee.toLocaleString()}</Descriptions.Item>
-                <Descriptions.Item label="Security Deposit">₱{pricing.securityDeposit.toLocaleString()}</Descriptions.Item>
-                <Descriptions.Item label={<Text strong style={{ color: '#333' }}>Total Amount</Text>}>
-                  <Text strong style={{ color: '#3A4D39', fontSize: '15px' }}>₱{pricing.totalAmount.toLocaleString()}</Text>
-                </Descriptions.Item>
-                <Descriptions.Item label="Down Payment (50%)">₱{pricing.downPayment.toLocaleString()}</Descriptions.Item>
-                <Descriptions.Item label="Balance Due">₱{pricing.balanceDue.toLocaleString()}</Descriptions.Item>
-              </Descriptions>
+            {/* Booking Date */}
+            <div style={{ marginBottom: '16px' }}>
+              <label>
+                <Text strong style={{ color: '#333' }}>
+                  Booking Date
+                </Text>
+              </label>
+              <Input
+                type="date"
+                value={form.bookingDate}
+                onChange={(e) => handleChange('bookingDate', e.target.value)}
+                required
+                size="large"
+                style={{ width: '100%', marginTop: '6px' }}
+              />
             </div>
-          )}
 
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            size="large" 
-            block 
-            disabled={submitting || !selectedPkg}
-            loading={submitting}
-            style={{ background: '#3A4D39', borderColor: '#3A4D39', color: '#FAFAF8' }}
-          >
-            {submitting ? 'Creating Booking...' : 'Create Booking'}
-          </Button>
-        </form>
-      </Card>
-    </div>
+            {/* Guest Count */}
+            <div style={{ marginBottom: '16px' }}>
+              <label>
+                <Text strong style={{ color: '#333' }}>
+                  Guest Count
+                </Text>
+              </label>
+              <Input
+                type="number"
+                min="1"
+                value={form.guestCount}
+                onChange={(e) => handleChange('guestCount', e.target.value)}
+                required
+                size="large"
+                style={{ width: '100%', marginTop: '6px' }}
+              />
+            </div>
+
+            {/* Package Quick Info */}
+            {selectedPkg && (
+              <div
+                style={{
+                  background: C.cream,
+                  padding: '12px 16px',
+                  borderRadius: '6px',
+                  marginBottom: '16px',
+                  border: `1px solid ${C.border}`,
+                }}
+              >
+                <Text style={{ color: C.gray, display: 'block' }}>
+                  <CalendarOutlined
+                    style={{ marginRight: '6px', color: C.medium }}
+                  />
+                  <strong>Schedule:</strong> {selectedPkg.startTime} –{' '}
+                  {selectedPkg.endTime}
+                </Text>
+                <Text
+                  style={{
+                    color: C.gray,
+                    display: 'block',
+                    marginTop: '4px',
+                  }}
+                >
+                  <strong>Max Pax Allowed:</strong> {selectedPkg.maxPax}{' '}
+                  (Included: {selectedPkg.includedPax})
+                </Text>
+              </div>
+            )}
+
+            {/* Special Requests */}
+            <div style={{ marginBottom: '20px' }}>
+              <label>
+                <Text strong style={{ color: '#333' }}>
+                  Special Requests (optional)
+                </Text>
+              </label>
+              <TextArea
+                rows={3}
+                value={form.specialRequests}
+                onChange={(e) =>
+                  handleChange('specialRequests', e.target.value)
+                }
+                placeholder="Enter any additional requests or preferences..."
+                style={{ marginTop: '6px' }}
+              />
+            </div>
+
+            {/* Availability Check */}
+            {selectedPkg && form.bookingDate && (
+              <div
+                style={{
+                  marginBottom: '24px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 12,
+                }}
+              >
+                <Button
+                  onClick={checkAvailability}
+                  loading={checking}
+                  style={{ borderColor: C.border, color: '#333' }}
+                >
+                  {checking ? 'Checking...' : 'Check Availability'}
+                </Button>
+
+                {availability === true && (
+                  <span
+                    style={{
+                      color: C.medium,
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    <CheckCircleOutlined /> Available
+                  </span>
+                )}
+                {availability === false && (
+                  <span
+                    style={{
+                      color: '#ff4d4f',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    <CloseCircleOutlined /> Not available
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* Pricing Preview */}
+            {pricing && (
+              <div
+                style={{
+                  background: C.cream,
+                  border: `1px solid ${C.border}`,
+                  padding: '16px',
+                  borderRadius: '6px',
+                  marginBottom: '24px',
+                }}
+              >
+                <Title
+                  level={5}
+                  style={{ marginTop: 0, color: C.green }}
+                >
+                  <DollarOutlined style={{ color: C.green }} /> Pricing Preview
+                </Title>
+                <Descriptions
+                  column={1}
+                  size="small"
+                  labelStyle={{ color: C.gray }}
+                >
+                  <Descriptions.Item label="Base Rate">
+                    ₱{pricing.baseRate.toLocaleString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Excess Pax Fee">
+                    ₱{pricing.excessPaxFee.toLocaleString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Security Deposit">
+                    ₱{pricing.securityDeposit.toLocaleString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item
+                    label={
+                      <Text strong style={{ color: '#333' }}>
+                        Total Amount
+                      </Text>
+                    }
+                  >
+                    <Text
+                      strong
+                      style={{ color: C.green, fontSize: '15px' }}
+                    >
+                      ₱{pricing.totalAmount.toLocaleString()}
+                    </Text>
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Down Payment (50%)">
+                    ₱{pricing.downPayment.toLocaleString()}
+                  </Descriptions.Item>
+                  <Descriptions.Item label="Balance Due">
+                    ₱{pricing.balanceDue.toLocaleString()}
+                  </Descriptions.Item>
+                </Descriptions>
+              </div>
+            )}
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              size="large"
+              block
+              disabled={submitting || !selectedPkg}
+              loading={submitting}
+              style={{
+                background: C.green,
+                borderColor: C.green,
+                color: '#FAFAF8',
+                height: 46,
+                fontWeight: 600,
+              }}
+            >
+              {submitting ? 'Creating Booking...' : 'Create Booking'}
+            </Button>
+          </form>
+        </Card>
+      </div>
     </div>
   );
 }

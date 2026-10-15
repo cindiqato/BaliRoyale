@@ -1,114 +1,18 @@
-
 import { useEffect, useState } from 'react';
+import { Card, Alert, Tag, Space, Spin } from 'antd';
+import { FileTextOutlined } from '@ant-design/icons';
 import api from '../../api/axios';
 
-// BALIROYALE COLORS
 const C = {
-  cream: '#F4F1EA',
   green: '#3A4D39',
   medium: '#4F6F52',
-  pink: '#F2DCD5',
+  gold: '#C5A46D',
+  cream: '#F4F1EA',
   white: '#FAFAF8',
-  gray: '#8A7A68',
-  brown: '#6E5A48',
+  gray: '#6E5A48',
+  brown: '#8A7A68',
   border: '#C4BBAF',
-};
-
-// REUSABLE INLINE STYLES
-const s = {
-  page: {
-    minHeight: '100vh',
-    background: C.cream,
-    padding: '45px 30px',
-    fontFamily: 'Arial, sans-serif',
-    color: '#333333',
-    boxSizing: 'border-box',
-  },
-  container: { maxWidth: 1100, margin: '0 auto' },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 20,
-  },
-  title: {
-    color: C.green,
-    fontSize: 32,
-    margin: '12px 0 8px',
-  },
-  muted: {
-    color: C.gray,
-    fontSize: 13,
-    margin: 0,
-  },
-  count: {
-    background: C.green,
-    borderRadius: 12,
-    padding: '18px 28px',
-    minWidth: 150,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-    boxSizing: 'border-box',
-  },
-  panel: {
-    background: C.white,
-    border: `1px solid ${C.border}`,
-    borderRadius: 16,
-    padding: 28,
-    boxShadow: '0 5px 25px rgba(58,77,57,0.06)',
-  },
-  card: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: 18,
-    background: C.white,
-    border: `1px solid ${C.border}`,
-    borderRadius: 12,
-    padding: 22,
-  },
-  icon: {
-    width: 46,
-    height: 46,
-    background: C.pink,
-    color: C.green,
-    borderRadius: 10,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 23,
-    flexShrink: 0,
-  },
-  badge: {
-    background: C.cream,
-    color: C.medium,
-    borderRadius: 6,
-    padding: '5px 11px',
-    fontSize: 11,
-    fontWeight: 700,
-  },
-  details: {
-    color: C.brown,
-    fontSize: 14,
-    lineHeight: 1.6,
-    margin: '0 0 16px',
-    overflowWrap: 'anywhere',
-  },
-  meta: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 10,
-    paddingTop: 14,
-    borderTop: `1px solid ${C.pink}`,
-  },
-  empty: {
-    textAlign: 'center',
-    color: C.gray,
-    padding: '55px 20px',
-  },
+  pink: '#F2DCD5',
 };
 
 const AdminAuditLogs = () => {
@@ -118,188 +22,225 @@ const AdminAuditLogs = () => {
 
   useEffect(() => {
     api.get('/auditlogs')
-      .then(res => setLogs(res.data))
-      .catch(err =>
-        setError(
-          err.response?.data?.error || 'Failed to load logs'
-        )
-      )
+      .then((res) => setLogs(res.data))
+      .catch((err) => setError(err.response?.data?.error || 'Failed to load logs'))
       .finally(() => setLoading(false));
   }, []);
 
   return (
-    <div style={s.page}>
-      <div style={s.container}>
-
-        {/* PAGE HEADER */}
-        <div style={{ ...s.row, marginBottom: 32 }}>
-          <div>
-            <span style={{
-              color: C.gray,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 2,
-            }}>
-              BALIROYALE / ADMINISTRATION
-            </span>
-
-            <h1 style={s.title}>Audit Logs</h1>
-
-            <p style={{ ...s.muted, fontSize: 14 }}>
-              Monitor system activities and review recorded actions.
-            </p>
-          </div>
-
-          <div style={s.count}>
-            <span style={{ color: C.pink, fontSize: 12 }}>
-              Total Log Entries
-            </span>
-
-            <strong style={{ color: C.white, fontSize: 30 }}>
-              {logs.length}
-            </strong>
-          </div>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: C.cream,
+        color: '#333333',
+        fontFamily: 'Arial, sans-serif',
+        padding: '40px 20px',
+      }}
+    >
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <p
+            style={{
+              color: C.gold,
+              fontSize: 12,
+              fontWeight: 'bold',
+              letterSpacing: 4,
+              textTransform: 'uppercase',
+              margin: 0,
+            }}
+          >
+            Bali Royale / Administration
+          </p>
+          <h1
+            style={{
+              fontFamily: 'Georgia, serif',
+              fontSize: '2.5rem',
+              fontWeight: 600,
+              color: C.green,
+              margin: '12px 0 8px',
+            }}
+          >
+            Audit Logs
+          </h1>
+          <p style={{ color: C.gray, margin: 0 }}>
+            Monitor system activities and review recorded actions.
+          </p>
         </div>
 
-        {/* MAIN PANEL */}
-        <div style={s.panel}>
+        {error && (
+          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 16 }} />
+        )}
 
-          <div style={{
-            ...s.row,
-            gap: 16,
-            paddingBottom: 22,
-            marginBottom: 22,
-            borderBottom: `1px solid ${C.pink}`,
-          }}>
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.75)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            borderRadius: 16,
+            border: `1px solid ${C.border}`,
+            boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
+          }}
+          bodyStyle={{ padding: 28 }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 16,
+              paddingBottom: 20,
+              marginBottom: 20,
+              borderBottom: `1px solid ${C.pink}`,
+            }}
+          >
             <div>
-              <h2 style={{
-                color: C.green,
-                fontSize: 20,
-                margin: '0 0 6px',
-              }}>
-                Activity History
+              <h2
+                style={{
+                  color: C.green,
+                  fontSize: 20,
+                  margin: '0 0 6px',
+                  fontFamily: 'Georgia, serif',
+                }}
+              >
+                Activity History ({logs.length})
               </h2>
-
-              <p style={s.muted}>
+              <p style={{ color: C.gray, margin: 0, fontSize: 13 }}>
                 Recorded system activities and actions
               </p>
             </div>
-
-            <span style={{
-              ...s.badge,
-              borderRadius: 20,
-              padding: '9px 15px',
-              fontSize: 12,
-              whiteSpace: 'nowrap',
-            }}>
+            <Tag
+              style={{
+                background: C.green,
+                color: C.white,
+                border: 'none',
+                fontWeight: 700,
+                padding: '6px 14px',
+                borderRadius: 8,
+                fontSize: 12,
+              }}
+            >
               {logs.length} Entries
-            </span>
+            </Tag>
           </div>
 
-          {/* LOADING */}
           {loading && (
-            <p style={s.empty}>Loading...</p>
-          )}
-
-          {/* ERROR */}
-          {error && (
-            <p style={{
-              background: C.pink,
-              color: '#A13E3E',
-              padding: 14,
-              borderRadius: 8,
-            }}>
-              {error}
-            </p>
-          )}
-
-          {/* EMPTY STATE */}
-          {!loading && logs.length === 0 && (
-            <div style={s.empty}>
-              <div style={{
-                fontSize: 38,
-                color: C.medium,
-                marginBottom: 14,
-              }}>
-                ▤
-              </div>
-
-              <h3 style={{
-                color: C.green,
-                marginBottom: 8,
-              }}>
-                No audit log entries
-              </h3>
-
-              <p>No audit log entries.</p>
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <Spin size="large" />
             </div>
           )}
 
-          {/* AUDIT LOG CARDS */}
-          <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 14,
-          }}>
-            {logs.map(l => (
-              <div key={l._id} style={s.card}>
+          {!loading && logs.length === 0 && (
+            <div style={{ textAlign: 'center', padding: 40 }}>
+              <FileTextOutlined style={{ fontSize: 38, color: C.medium }} />
+              <h3 style={{ color: C.green, marginTop: 14 }}>
+                No audit log entries
+              </h3>
+              <p style={{ color: C.gray }}>No audit log entries.</p>
+            </div>
+          )}
 
-                <div style={s.icon}>▤</div>
-
-                <div style={{ flex: 1, minWidth: 0 }}>
-
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 12,
-                    marginBottom: 12,
-                  }}>
-                    <h3 style={{
+          {!loading &&
+            logs.map((l) => (
+              <Card
+                key={l._id}
+                bordered={false}
+                style={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 12,
+                  marginBottom: 14,
+                }}
+                bodyStyle={{ padding: 20 }}
+              >
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
+                  <div
+                    style={{
+                      width: 46,
+                      height: 46,
+                      background: C.pink,
                       color: C.green,
-                      fontSize: 16,
-                      fontWeight: 700,
-                      margin: 0,
-                      overflowWrap: 'anywhere',
-                    }}>
-                      {l.action}
-                    </h3>
-
-                    <span style={s.badge}>
-                      {l.targetModel || 'N/A'}
-                    </span>
+                      borderRadius: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 22,
+                      flexShrink: 0,
+                    }}
+                  >
+                    <FileTextOutlined />
                   </div>
 
-                  <p style={s.details}>
-                    {l.details}
-                  </p>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <Space wrap align="center" style={{ marginBottom: 10 }}>
+                      <h3
+                        style={{
+                          color: C.green,
+                          fontSize: 16,
+                          fontWeight: 700,
+                          margin: 0,
+                          fontFamily: 'Georgia, serif',
+                          overflowWrap: 'anywhere',
+                        }}
+                      >
+                        {l.action}
+                      </h3>
+                      <Tag
+                        style={{
+                          background: C.cream,
+                          color: C.medium,
+                          border: 'none',
+                          fontWeight: 600,
+                        }}
+                      >
+                        {l.targetModel || 'N/A'}
+                      </Tag>
+                    </Space>
 
-                  {/* LOG METADATA */}
-                  <div style={s.meta}>
-                    <span style={{
-                      color: C.brown,
-                      fontSize: 12,
-                      fontWeight: 600,
-                    }}>
-                      By {l.actor?.firstName}{' '}
-                      {l.actor?.lastName}{' '}
-                      ({l.actor?.role})
-                    </span>
+                    <p
+                      style={{
+                        color: C.brown,
+                        margin: '0 0 12px',
+                        fontSize: 14,
+                        lineHeight: 1.6,
+                        overflowWrap: 'anywhere',
+                      }}
+                    >
+                      {l.details}
+                    </p>
 
-                    <span style={{
-                      color: C.gray,
-                      fontSize: 12,
-                    }}>
-                      {new Date(l.createdAt).toLocaleString()}
-                    </span>
+                    <div
+                      style={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        flexWrap: 'wrap',
+                        gap: 10,
+                        paddingTop: 12,
+                        borderTop: `1px solid ${C.pink}`,
+                      }}
+                    >
+                      <span
+                        style={{
+                          color: C.brown,
+                          fontSize: 12,
+                          fontWeight: 600,
+                        }}
+                      >
+                        By {l.actor?.firstName} {l.actor?.lastName} (
+                        {l.actor?.role})
+                      </span>
+                      <span style={{ color: C.gray, fontSize: 12 }}>
+                        {new Date(l.createdAt).toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-
                 </div>
-              </div>
+              </Card>
             ))}
-          </div>
-
-        </div>
+        </Card>
       </div>
     </div>
   );

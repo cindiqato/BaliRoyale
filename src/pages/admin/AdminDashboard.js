@@ -1,94 +1,26 @@
-
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Card, Row, Col, Statistic, Alert, Space } from 'antd';
+import {
+  TeamOutlined,
+  UserOutlined,
+  IdcardOutlined,
+  AppstoreOutlined,
+  CalendarOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 
-// BALIROYALE COLORS
 const C = {
-  cream: '#F4F1EA',
   green: '#3A4D39',
   medium: '#4F6F52',
-  pink: '#F2DCD5',
+  gold: '#C5A46D',
+  cream: '#F4F1EA',
   white: '#FAFAF8',
-  gray: '#8A7A68',
-  brown: '#6E5A48',
-  border: '#C4BBAF',
-};
-
-// REUSABLE INLINE STYLES
-const s = {
-  page: {
-    minHeight: '100vh',
-    background: C.cream,
-    padding: '45px 30px',
-    fontFamily: 'Arial, sans-serif',
-    color: '#333333',
-    boxSizing: 'border-box',
-  },
-  container: { maxWidth: 1100, margin: '0 auto' },
-  row: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 20,
-    flexWrap: 'wrap',
-  },
-  title: {
-    color: C.green,
-    fontSize: 32,
-    margin: '12px 0 8px',
-  },
-  muted: {
-    color: C.gray,
-    fontSize: 13,
-    margin: 0,
-  },
-  sectionTitle: {
-    color: C.green,
-    fontSize: 20,
-    margin: 0,
-  },
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: 18,
-  },
-  card: {
-    background: C.white,
-    border: `1px solid ${C.border}`,
-    borderRadius: 14,
-    padding: 24,
-    minHeight: 130,
-    display: 'flex',
-    flexDirection: 'column',
-    justifyContent: 'space-between',
-    gap: 18,
-    boxShadow: '0 4px 14px rgba(58,77,57,0.04)',
-    boxSizing: 'border-box',
-  },
-  panel: {
-    background: C.white,
-    border: `1px solid ${C.border}`,
-    borderRadius: 16,
-    padding: 28,
-    boxShadow: '0 5px 25px rgba(58,77,57,0.06)',
-  },
-  action: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: 10,
-    background: C.cream,
-    color: C.green,
-    border: `1px solid ${C.border}`,
-    borderRadius: 10,
-    padding: 20,
-    fontSize: 14,
-    fontWeight: 700,
-    textDecoration: 'none',
-    boxSizing: 'border-box',
-  },
+  gray: '#6E5A48',
+  brown: '#8A7A68',
+  border: '#E2DCD5',
 };
 
 const AdminDashboard = () => {
@@ -99,27 +31,22 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     api.get('/dashboard/admin')
-      .then(res => setStats(res.data))
-      .catch(err =>
-        setError(
-          err.response?.data?.error ||
-          'Failed to load dashboard'
-        )
-      )
+      .then((res) => setStats(res.data))
+      .catch((err) => setError(err.response?.data?.error || 'Failed to load dashboard'))
       .finally(() => setLoading(false));
   }, []);
 
-  // STATISTICS DATA
-  const statistics = stats ? [
-    { label: 'Total Users', value: stats.totalUsers, icon: '♙' },
-    { label: 'Guests', value: stats.totalGuests, icon: '♙' },
-    { label: 'Staff', value: stats.totalStaff, icon: '♙' },
-    { label: 'Packages', value: stats.totalPackages, icon: '▣' },
-    { label: 'Bookings', value: stats.totalBookings, icon: '▦' },
-    { label: 'Archived Records', value: stats.totalArchived, icon: '▤' },
-  ] : [];
+  const statistics = stats
+    ? [
+        { label: 'Total Users', value: stats.totalUsers, icon: <TeamOutlined style={{ color: C.green }} /> },
+        { label: 'Guests', value: stats.totalGuests, icon: <UserOutlined style={{ color: C.green }} /> },
+        { label: 'Staff', value: stats.totalStaff, icon: <IdcardOutlined style={{ color: C.green }} /> },
+        { label: 'Packages', value: stats.totalPackages, icon: <AppstoreOutlined style={{ color: C.green }} /> },
+        { label: 'Bookings', value: stats.totalBookings, icon: <CalendarOutlined style={{ color: C.green }} /> },
+        { label: 'Archived Records', value: stats.totalArchived, icon: <FileTextOutlined style={{ color: C.green }} /> },
+      ]
+    : [];
 
-  // MANAGEMENT LINKS
   const actions = [
     { label: 'Manage Users', path: '/admin/users' },
     { label: 'Manage Packages', path: '/admin/packages' },
@@ -128,170 +55,143 @@ const AdminDashboard = () => {
   ];
 
   return (
-    <div style={s.page}>
-      <div style={s.container}>
-
-        {/* WELCOME HEADER */}
-        <div style={{ ...s.row, marginBottom: 38 }}>
-          <div>
-            <span style={{
-              color: C.gray,
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: 2,
-            }}>
-              BALIROYALE / ADMINISTRATION
-            </span>
-
-            <h1 style={s.title}>
-              Welcome, {user?.firstName}!
-            </h1>
-
-            <p style={{ ...s.muted, fontSize: 14 }}>
-              Admin overview of the system.
-            </p>
-          </div>
-
-          <div style={{
-            width: 65,
-            height: 65,
-            background: C.green,
-            color: C.white,
-            borderRadius: 14,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-          }}>
-            <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <rect x="14" y="14" width="7" height="7" rx="1" />
-            </svg>
-          </div>
+    <div
+      style={{
+        minHeight: '100vh',
+        background: C.cream,
+        color: '#333333',
+        fontFamily: 'Arial, sans-serif',
+        padding: '40px 20px',
+      }}
+    >
+      <div style={{ maxWidth: 1100, margin: '0 auto' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <p
+            style={{
+              color: C.gold,
+              fontSize: 12,
+              fontWeight: 'bold',
+              letterSpacing: 4,
+              textTransform: 'uppercase',
+              margin: 0,
+            }}
+          >
+            Bali Royale / Administration
+          </p>
+          <h1
+            style={{
+              fontFamily: 'Georgia, serif',
+              fontSize: '2.5rem',
+              fontWeight: 600,
+              color: C.green,
+              margin: '12px 0 8px',
+            }}
+          >
+            Welcome, {user?.firstName}!
+          </h1>
+          <p style={{ color: C.gray, margin: 0 }}>Admin overview of the system.</p>
         </div>
 
-        {/* LOADING AND ERROR */}
-        {loading && (
-          <p style={{ ...s.muted, textAlign: 'center', padding: 25 }}>
-            Loading...
-          </p>
-        )}
-
         {error && (
-          <p style={{
-            background: C.pink,
-            color: '#A13E3E',
-            padding: 14,
-            borderRadius: 8,
-            marginBottom: 20,
-          }}>
-            {error}
-          </p>
+          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 24 }} />
         )}
 
-        {/* SYSTEM OVERVIEW */}
+        {loading && (
+          <p style={{ textAlign: 'center', color: C.gray, padding: 30 }}>Loading...</p>
+        )}
+
         {stats && (
-          <section style={{ marginBottom: 35 }}>
-
-            <div style={{ ...s.row, marginBottom: 18 }}>
-              <h2 style={s.sectionTitle}>
-                System Overview
-              </h2>
-              <span style={s.muted}>
-                Overview Statistics
-              </span>
-            </div>
-
-            <div style={s.grid}>
-              {statistics.map(item => (
-                <div key={item.label} style={s.card}>
-
-                  <div style={s.row}>
-                    <span style={{
-                      color: C.brown,
-                      fontSize: 13,
-                      fontWeight: 600,
-                    }}>
-                      {item.label}
-                    </span>
-
-                    <span style={{
-                      color: C.medium,
-                      fontSize: 22,
-                    }}>
-                      {item.icon}
-                    </span>
-                  </div>
-
-                  <strong style={{
-                    color: C.green,
-                    fontSize: 36,
-                    lineHeight: 1,
-                  }}>
-                    {item.value}
-                  </strong>
-
-                </div>
+          <>
+            {/* Statistics */}
+            <Row gutter={[18, 18]} style={{ marginBottom: 32 }}>
+              {statistics.map((item) => (
+                <Col xs={24} sm={12} md={8} key={item.label}>
+                  <Card
+                    bordered={false}
+                    style={{
+                      background: 'rgba(250, 250, 248, 0.75)',
+                      backdropFilter: 'blur(16px)',
+                      WebkitBackdropFilter: 'blur(16px)',
+                      borderRadius: 16,
+                      border: `1px solid ${C.border}`,
+                      boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
+                    }}
+                    bodyStyle={{ padding: '20px' }}
+                  >
+                    <Statistic
+                      title={
+                        <span style={{ color: C.brown, fontWeight: 600 }}>
+                          {item.label}
+                        </span>
+                      }
+                      value={item.value}
+                      prefix={item.icon}
+                      valueStyle={{
+                        color: C.green,
+                        fontWeight: 700,
+                        fontFamily: 'Georgia, serif',
+                      }}
+                    />
+                  </Card>
+                </Col>
               ))}
-            </div>
-          </section>
-        )}
+            </Row>
 
-        {/* QUICK MANAGEMENT */}
-        <section style={s.panel}>
-
-          <div style={{ marginBottom: 22 }}>
-            <h2 style={{
-              ...s.sectionTitle,
-              marginBottom: 7,
-            }}>
-              Quick Management
-            </h2>
-
-            <p style={s.muted}>
-              Access your administrative tools
-            </p>
-          </div>
-
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-            gap: 14,
-          }}>
-            {actions.map((item, index) => (
-              <Link
-                key={item.path}
-                to={item.path}
+            {/* Quick actions */}
+            <Card
+              bordered={false}
+              style={{
+                background: 'rgba(250, 250, 248, 0.75)',
+                backdropFilter: 'blur(16px)',
+                WebkitBackdropFilter: 'blur(16px)',
+                borderRadius: 16,
+                border: `1px solid ${C.border}`,
+                boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
+              }}
+              bodyStyle={{ padding: '28px' }}
+            >
+              <h2
                 style={{
-                  ...s.action,
-                  ...(index === 0 ? {
-                    background: C.green,
-                    color: C.white,
-                    borderColor: C.green,
-                  } : {}),
+                  fontFamily: 'Georgia, serif',
+                  color: C.green,
+                  margin: '0 0 8px',
                 }}
               >
-                <span>{item.label}</span>
-                <span style={{ fontSize: 20, fontWeight: 400 }}>
-                  ↗
-                </span>
-              </Link>
-            ))}
-          </div>
+                Quick Management
+              </h2>
+              <p style={{ color: C.gray, margin: '0 0 20px' }}>
+                Access your administrative tools
+              </p>
 
-        </section>
-
+              <Row gutter={[14, 14]}>
+                {actions.map((item, index) => (
+                  <Col xs={24} sm={12} key={item.path}>
+                    <Link to={item.path}>
+                      <div
+                        style={{
+                          background: index === 0 ? C.green : C.cream,
+                          color: index === 0 ? '#FAFAF8' : C.green,
+                          border: index === 0 ? `1px solid ${C.green}` : `1px solid ${C.border}`,
+                          borderRadius: 10,
+                          padding: 20,
+                          fontSize: 14,
+                          fontWeight: 700,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
+                        <span>{item.label}</span>
+                        <span style={{ fontSize: 20, fontWeight: 400 }}>↗</span>
+                      </div>
+                    </Link>
+                  </Col>
+                ))}
+              </Row>
+            </Card>
+          </>
+        )}
       </div>
     </div>
   );
