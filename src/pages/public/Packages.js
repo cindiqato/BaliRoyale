@@ -7,7 +7,14 @@ import {
   UserOutlined,
 } from '@ant-design/icons';
 import api from '../../api/axios';
-import sampleImage from '../../assets/sample.png';
+
+import packageUno from '../../assets/packageUno.png';
+import packageDos from '../../assets/packageDos.png';
+import packageTres from '../../assets/packageTres.png';
+import packageCuatro from '../../assets/packageCuatro.png';
+import packageCinco from '../../assets/packageCinco.jpg';
+import packageSais from '../../assets/packageSais.png';
+import homeImage from '../../assets/home.png';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -19,6 +26,19 @@ const C = {
   white: '#FAFAF8',
   gray: '#6E5A48',
   border: '#E2DCD5',
+};
+
+// Map package name → image. Falls back to home.png for unrecognized names.
+const getPackageImage = (name) => {
+  const map = {
+    'Day Tour': packageUno,
+    'Night Tour': packageDos,
+    '21H Weekday': packageTres,
+    '21H Weekend': packageCuatro,
+    '20pax (21H)': packageCinco,
+    '30pax (21H)': packageSais,
+  };
+  return map[name] || homeImage;
 };
 
 export default function Packages() {
@@ -132,7 +152,7 @@ export default function Packages() {
                   cover={
                     <img
                       alt={pkg.name}
-                      src={sampleImage}
+                      src={getPackageImage(pkg.name)}
                       style={{
                         height: '180px',
                         objectFit: 'cover',

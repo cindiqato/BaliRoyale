@@ -7,7 +7,7 @@ import {
   CalendarOutlined,
 } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
-import sampleImage from '../../assets/sample.png';
+import homeImage from '../../assets/home.png';
 
 const C = {
   green: '#3A4D39',
@@ -61,7 +61,7 @@ const Home = () => {
       <section
         style={{
           minHeight: 600,
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.55)), url(${sampleImage})`,
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.55)), url(${homeImage})`,
           backgroundPosition: 'center',
           backgroundSize: 'cover',
           display: 'flex',
@@ -290,7 +290,7 @@ const Home = () => {
                     fontFamily: 'Georgia, serif',
                     color: C.green,
                     fontSize: 19,
-                    margin: '0 0 14px 0',
+                    marginBottom: 15,
                   }}
                 >
                   {feature.title}

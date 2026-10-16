@@ -19,7 +19,14 @@ import {
 } from '@ant-design/icons';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
-import sampleImage from '../../assets/sample.png';
+
+import packageUno from '../../assets/packageUno.png';
+import packageDos from '../../assets/packageDos.png';
+import packageTres from '../../assets/packageTres.png';
+import packageCuatro from '../../assets/packageCuatro.png';
+import packageCinco from '../../assets/packageCinco.jpg';
+import packageSais from '../../assets/packageSais.png';
+import homeImage from '../../assets/home.png';
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -31,6 +38,18 @@ const C = {
   white: '#FAFAF8',
   gray: '#6E5A48',
   border: '#E2DCD5',
+};
+
+const getPackageImage = (name) => {
+  const map = {
+    'Day Tour': packageUno,
+    'Night Tour': packageDos,
+    '21H Weekday': packageTres,
+    '21H Weekend': packageCuatro,
+    '20pax (21H)': packageCinco,
+    '30pax (21H)': packageSais,
+  };
+  return map[name] || homeImage;
 };
 
 export default function PackageDetail() {
@@ -98,7 +117,7 @@ export default function PackageDetail() {
         <Row gutter={[32, 32]} style={{ marginTop: '16px' }}>
           <Col xs={24} md={14}>
             <img
-              src={sampleImage}
+              src={getPackageImage(pkg.name)}
               alt={pkg.name}
               style={{
                 borderRadius: '12px',
