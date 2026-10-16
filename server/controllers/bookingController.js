@@ -50,11 +50,13 @@ const createBooking = async (req, res) => {
     const balanceDue = totalAmount - downPayment;
 
     const normalizedDate = new Date(bookingDate);
-    const bookingDateUTC = new Date(Date.UTC(
-    normalizedDate.getUTCFullYear(),
-    normalizedDate.getUTCMonth(),
-    normalizedDate.getUTCDate()
-    ));
+    const bookingDateUTC = new Date(
+      Date.UTC(
+        normalizedDate.getUTCFullYear(),
+        normalizedDate.getUTCMonth(),
+        normalizedDate.getUTCDate()
+      )
+    );
 
     const booking = new BookingModel({
       bookingRef: generateBookingRef(),
@@ -100,13 +102,14 @@ const checkAvailability = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Normalize the target date to UTC midnight
     const targetDate = new Date(bookingDate);
-    const dayStart = new Date(Date.UTC(
-      targetDate.getUTCFullYear(),
-      targetDate.getUTCMonth(),
-      targetDate.getUTCDate()
-    ));
+    const dayStart = new Date(
+      Date.UTC(
+        targetDate.getUTCFullYear(),
+        targetDate.getUTCMonth(),
+        targetDate.getUTCDate()
+      )
+    );
     const dayEnd = new Date(dayStart);
     dayEnd.setUTCDate(dayEnd.getUTCDate() + 1);
 
@@ -162,11 +165,11 @@ const getBookingById = async (req, res) => {
 
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
-    if (
-      req.user.role !== 'admin' &&
-      req.user.role !== 'staff' &&
-      booking.user._id.toString() !== req.user.id
-    ) {
+    const isStaffOrAdmin =
+      req.user.role === 'staff' || req.user.role === 'admin';
+    const isOwner = booking.user._id.toString() === req.user.id;
+
+    if (!isStaffOrAdmin && !isOwner) {
       return res.status(403).json({ error: 'Access denied' });
     }
 

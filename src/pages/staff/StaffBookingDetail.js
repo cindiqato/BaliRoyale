@@ -1,0 +1,758 @@
+import React, { useEffect, useState } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import {
+  Card,
+  Button,
+  Typography,
+  Space,
+  Descriptions,
+  Divider,
+  Tag,
+  Alert,
+  Spin,
+  Row,
+  Col,
+  InputNumber,
+  Input,
+  Modal,
+  List,
+} from 'antd';
+import {
+  ArrowLeftOutlined,
+  CheckCircleOutlined,
+  CloseCircleOutlined,
+  StopOutlined,
+  DollarOutlined,
+  UserOutlined,
+  HomeOutlined,
+  CalendarOutlined,
+  FileImageOutlined,
+  FileTextOutlined,
+} from '@ant-design/icons';
+import api from '../../api/axios';
+
+const { Title, Text } = Typography;
+const { TextArea } = Input;
+
+const C = {
+  green: '#3A4D39',
+  medium: '#4F6F52',
+  gold: '#C5A46D',
+  cream: '#F4F1EA',
+  white: '#FAFAF8',
+  gray: '#6E5A48',
+  brown: '#8A7A68',
+  border: '#C4BBAF',
+  pink: '#F2DCD5',
+};
+
+const statusColors = {
+  pending: { color: '#8A7A68', bg: '#C4BBAF20', label: 'Pending' },
+  confirmed: { color: '#4F6F52', bg: '#4F6F5220', label: 'Confirmed' },
+  checked_in: { color: '#3A4D39', bg: '#3A4D3920', label: 'Checked In' },
+  completed: { color: '#6E5A48', bg: '#6E5A4820', label: 'Completed' },
+  cancelled: { color: '#8A7A68', bg: '#8A7A6820', label: 'Cancelled' },
+  no_show: { color: '#333333', bg: '#33333320', label: 'No Show' },
+};
+
+export default function StaffBookingDetail() {
+  const { id } = useParams();
+
+  const [booking, setBooking] = useState(null);
+  const [payments, setPayments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [acting, setActing] = useState(false);
+
+  // Deduct deposit modal
+  const [deductOpen, setDeductOpen] = useState(false);
+  const [deductAmount, setDeductAmount] = useState(null);
+  const [deductReason, setDeductReason] = useState('');
+
+  const loadData = () => {
+    setLoading(true);
+    Promise.all([
+      api.get(`/bookings/${id}`),
+      api.get(`/payments/booking/${id}`),
+    ])
+      .then(([b, p]) => {
+        setBooking(b.data);
+        setPayments(p.data);
+      })
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load booking')
+      )
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
+
+  const act = async (action, body = null) => {
+    setError('');
+    setMessage('');
+    setActing(true);
+    try {
+      await api.put(`/bookings/${id}/${action}`, body || {});
+      setMessage(`Action "${action}" succeeded.`);
+      loadData();
+    } catch (err) {
+      setError(err.response?.data?.error || `Failed to ${action}`);
+    } finally {
+      setActing(false);
+    }
+  };
+
+  const submitDeduct = async () => {
+    if (!deductAmount || !deductReason) return;
+    await act('deposit-deduct', {
+      amount: Number(deductAmount),
+      reason: deductReason,
+    });
+    setDeductOpen(false);
+    setDeductAmount(null);
+    setDeductReason('');
+  };
+
+  const renderStatusTag = (status) => {
+    const cfg =
+      statusColors[status] || {
+        color: '#333',
+        bg: '#E2DCD520',
+        label: status,
+      };
+    return (
+      <Tag
+        style={{
+          color: cfg.color,
+          backgroundColor: cfg.bg,
+          borderColor: cfg.color,
+          borderRadius: 12,
+          padding: '2px 12px',
+          textTransform: 'uppercase',
+          fontWeight: 600,
+        }}
+      >
+        {cfg.label}
+      </Tag>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div style={{ textAlign: 'center', padding: '60px' }}>
+        <Spin size="large" />
+        <p style={{ marginTop: '16px', color: C.gray }}>
+          Loading booking details...
+        </p>
+      </div>
+    );
+  }
+
+  if (error && !booking) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
+        <Alert message="Error" description={error} type="error" showIcon />
+      </div>
+    );
+  }
+
+  if (!booking) return null;
+
+  // Determine which workflow actions are available
+  const canConfirm = booking.status === 'pending';
+  const canCheckIn = booking.status === 'confirmed';
+  const canComplete = booking.status === 'checked_in';
+  const canSettleDeposit =
+    booking.status === 'completed' && booking.depositStatus === 'held';
+
+  return (
+    <div
+      style={{
+        minHeight: '100vh',
+        backgroundColor: C.cream,
+        color: '#333333',
+        fontFamily: 'Arial, sans-serif',
+        padding: '40px 20px',
+      }}
+    >
+      <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+        <p>
+          <Link
+            to="/staff/bookings"
+            style={{ color: C.medium, fontWeight: 500 }}
+          >
+            <ArrowLeftOutlined style={{ marginRight: '6px' }} /> Back to All
+            Bookings
+          </Link>
+        </p>
+
+        {/* Header */}
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 12,
+            marginBottom: 20,
+          }}
+        >
+          <div>
+            <Title
+              level={2}
+              style={{
+                color: C.green,
+                fontFamily: 'Georgia, serif',
+                margin: 0,
+              }}
+            >
+              #{booking.bookingRef}
+            </Title>
+            <Text style={{ color: C.gray }}>
+              Booking details and staff actions
+            </Text>
+          </div>
+          {renderStatusTag(booking.status)}
+        </div>
+
+        {message && (
+          <Alert
+            message={message}
+            type="success"
+            showIcon
+            closable
+            onClose={() => setMessage('')}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            onClose={() => setError('')}
+            style={{ marginBottom: 16 }}
+          />
+        )}
+
+        {/* Workflow Actions */}
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.85)',
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+            marginBottom: 20,
+          }}
+          bodyStyle={{ padding: 20 }}
+        >
+          <Title level={5} style={{ color: C.green, marginTop: 0 }}>
+            Staff Actions
+          </Title>
+          <Space wrap>
+            {canConfirm && (
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={acting}
+                onClick={() => act('confirm')}
+                style={{ background: C.medium, borderColor: C.medium }}
+              >
+                Confirm Booking
+              </Button>
+            )}
+
+            {canCheckIn && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<CheckCircleOutlined />}
+                  loading={acting}
+                  onClick={() => act('checkin')}
+                  style={{ background: C.green, borderColor: C.green }}
+                >
+                  Check In Guest
+                </Button>
+                <Button
+                  icon={<StopOutlined />}
+                  loading={acting}
+                  onClick={() => act('noshow')}
+                  style={{ borderColor: C.brown, color: C.brown }}
+                >
+                  Mark No Show
+                </Button>
+              </>
+            )}
+
+            {canComplete && (
+              <Button
+                type="primary"
+                icon={<CheckCircleOutlined />}
+                loading={acting}
+                onClick={() => act('complete')}
+                style={{ background: C.medium, borderColor: C.medium }}
+              >
+                Complete Booking
+              </Button>
+            )}
+
+            {canSettleDeposit && (
+              <>
+                <Button
+                  type="primary"
+                  icon={<DollarOutlined />}
+                  loading={acting}
+                  onClick={() => act('deposit-return')}
+                  style={{ background: C.green, borderColor: C.green }}
+                >
+                  Return Deposit
+                </Button>
+                <Button
+                  icon={<CloseCircleOutlined />}
+                  onClick={() => setDeductOpen(true)}
+                  style={{ borderColor: C.brown, color: C.brown }}
+                >
+                  Deduct Deposit
+                </Button>
+              </>
+            )}
+
+            {!canConfirm &&
+              !canCheckIn &&
+              !canComplete &&
+              !canSettleDeposit && (
+                <Text style={{ color: C.gray }}>
+                  No pending actions for this booking.
+                </Text>
+              )}
+          </Space>
+        </Card>
+
+        {/* Booking Summary */}
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.85)',
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+            marginBottom: 20,
+          }}
+          bodyStyle={{ padding: 24 }}
+        >
+          <Title level={5} style={{ color: C.green, marginTop: 0 }}>
+            Booking Summary
+          </Title>
+
+          <Row gutter={[24, 16]}>
+            <Col xs={24} md={12}>
+              <Text
+                style={{
+                  color: C.brown,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                <UserOutlined /> Guest
+              </Text>
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontWeight: 600,
+                  color: '#333',
+                }}
+              >
+                {booking.user?.firstName} {booking.user?.lastName}
+              </p>
+              <p style={{ margin: 0, color: C.gray, fontSize: 13 }}>
+                {booking.user?.email}
+              </p>
+              {booking.user?.phone && (
+                <p style={{ margin: 0, color: C.gray, fontSize: 13 }}>
+                  {booking.user.phone}
+                </p>
+              )}
+            </Col>
+
+            <Col xs={24} md={12}>
+              <Text
+                style={{
+                  color: C.brown,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                <HomeOutlined /> Package
+              </Text>
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontWeight: 600,
+                  color: '#333',
+                }}
+              >
+                {booking.package?.name}
+              </p>
+              <p style={{ margin: 0, color: C.gray, fontSize: 13 }}>
+                {booking.guestCount} guest(s)
+              </p>
+            </Col>
+
+            <Col xs={24} md={12}>
+              <Text
+                style={{
+                  color: C.brown,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                <CalendarOutlined /> Schedule
+              </Text>
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontWeight: 600,
+                  color: '#333',
+                }}
+              >
+                {new Date(booking.bookingDate).toDateString()}
+              </p>
+              <p style={{ margin: 0, color: C.gray, fontSize: 13 }}>
+                {booking.startTime} – {booking.endTime}
+              </p>
+            </Col>
+
+            <Col xs={24} md={12}>
+              <Text
+                style={{
+                  color: C.brown,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                <DollarOutlined /> Payment & Deposit
+              </Text>
+              <p
+                style={{
+                  margin: '4px 0 0',
+                  fontWeight: 600,
+                  color: C.green,
+                }}
+              >
+                ₱{booking.pricing?.totalAmount?.toLocaleString()}
+              </p>
+              <p style={{ margin: 0, color: C.gray, fontSize: 13 }}>
+                Payment: <strong>{booking.paymentStatus}</strong> • Deposit:{' '}
+                <strong>{booking.depositStatus}</strong>
+              </p>
+            </Col>
+          </Row>
+
+          {booking.specialRequests && (
+            <>
+              <Divider style={{ borderColor: C.pink }} />
+              <Text
+                style={{
+                  color: C.brown,
+                  fontSize: 11,
+                  letterSpacing: 1,
+                  textTransform: 'uppercase',
+                  fontWeight: 700,
+                }}
+              >
+                Special Requests
+              </Text>
+              <p style={{ margin: '4px 0 0', color: '#333' }}>
+                {booking.specialRequests}
+              </p>
+            </>
+          )}
+        </Card>
+
+        {/* Pricing Breakdown */}
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.85)',
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+            marginBottom: 20,
+          }}
+          bodyStyle={{ padding: 24 }}
+        >
+          <Title level={5} style={{ color: C.green, marginTop: 0 }}>
+            Pricing Breakdown
+          </Title>
+          <Descriptions
+            column={1}
+            size="small"
+            labelStyle={{
+              fontWeight: 600,
+              color: C.gray,
+              width: 200,
+            }}
+          >
+            <Descriptions.Item label="Base Rate">
+              ₱{booking.pricing?.baseRate?.toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="Excess Pax Fee">
+              ₱{booking.pricing?.excessPaxFee?.toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="Security Deposit">
+              ₱{booking.pricing?.securityDeposit?.toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="Total Amount">
+              <strong style={{ color: C.green }}>
+                ₱{booking.pricing?.totalAmount?.toLocaleString()}
+              </strong>
+            </Descriptions.Item>
+            <Descriptions.Item label="Down Payment">
+              ₱{booking.pricing?.downPayment?.toLocaleString()}
+            </Descriptions.Item>
+            <Descriptions.Item label="Balance Due">
+              ₱{booking.pricing?.balanceDue?.toLocaleString()}
+            </Descriptions.Item>
+          </Descriptions>
+        </Card>
+
+        {/* Payment History */}
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.85)',
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+            marginBottom: 20,
+          }}
+          bodyStyle={{ padding: 24 }}
+        >
+          <Title level={5} style={{ color: C.green, marginTop: 0 }}>
+            Payment History ({payments.length})
+          </Title>
+
+          {payments.length === 0 ? (
+            <Text style={{ color: C.gray }}>
+              No payments submitted yet.
+            </Text>
+          ) : (
+            <List
+              dataSource={payments}
+              renderItem={(p) => (
+                <List.Item
+                  style={{
+                    padding: '12px 0',
+                    borderBottom: `1px solid ${C.pink}`,
+                  }}
+                >
+                  <div style={{ width: '100%' }}>
+                    <Row
+                      justify="space-between"
+                      align="middle"
+                      gutter={[12, 8]}
+                    >
+                      <Col flex="auto">
+                        <Text strong style={{ color: C.green }}>
+                          {p.type === 'down_payment'
+                            ? 'Down Payment'
+                            : p.type === 'balance'
+                            ? 'Balance'
+                            : p.type}
+                        </Text>
+                        <span
+                          style={{
+                            marginLeft: 10,
+                            color: C.gray,
+                            fontSize: 13,
+                          }}
+                        >
+                          ₱{p.amount?.toLocaleString()} via {p.method}
+                        </span>
+                      </Col>
+                      <Col>
+                        <Tag
+                          style={{
+                            textTransform: 'uppercase',
+                            fontWeight: 600,
+                            border: 'none',
+                            background:
+                              p.status === 'verified'
+                                ? '#E8EFE5'
+                                : p.status === 'rejected'
+                                ? C.pink
+                                : C.cream,
+                            color:
+                              p.status === 'verified'
+                                ? C.green
+                                : p.status === 'rejected'
+                                ? '#A13E3E'
+                                : C.gray,
+                          }}
+                        >
+                          {p.status}
+                        </Tag>
+                      </Col>
+                    </Row>
+
+                    <div
+                      style={{
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: C.brown,
+                        display: 'flex',
+                        flexWrap: 'wrap',
+                        gap: 12,
+                      }}
+                    >
+                      {p.referenceNo && (
+                        <span>
+                          <FileTextOutlined /> Ref: {p.referenceNo}
+                        </span>
+                      )}
+                      {p.proofImage && (
+                        <a
+                          href={`http://localhost:8000/uploads/${p.proofImage}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{ color: C.medium }}
+                        >
+                          <FileImageOutlined /> View Proof
+                        </a>
+                      )}
+                      {p.rejectionReason && (
+                        <span style={{ color: '#A13E3E' }}>
+                          Reason: {p.rejectionReason}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </List.Item>
+              )}
+            />
+          )}
+        </Card>
+
+        {/* Status History */}
+        <Card
+          bordered={false}
+          style={{
+            background: 'rgba(250, 250, 248, 0.85)',
+            borderRadius: 12,
+            border: `1px solid ${C.border}`,
+          }}
+          bodyStyle={{ padding: 24 }}
+        >
+          <Title level={5} style={{ color: C.green, marginTop: 0 }}>
+            Status History
+          </Title>
+
+          {booking.statusHistory && booking.statusHistory.length > 0 ? (
+            <div>
+              {booking.statusHistory.map((h, i) => (
+                <div
+                  key={i}
+                  style={{
+                    paddingBottom: 12,
+                    marginBottom: 12,
+                    borderBottom:
+                      i < booking.statusHistory.length - 1
+                        ? `1px dashed ${C.pink}`
+                        : 'none',
+                  }}
+                >
+                  <Text
+                    strong
+                    style={{ color: C.green, textTransform: 'capitalize' }}
+                  >
+                    {h.status.replace('_', ' ')}
+                  </Text>
+                  <span
+                    style={{
+                      marginLeft: 10,
+                      color: C.gray,
+                      fontSize: 12,
+                    }}
+                  >
+                    {new Date(h.changedAt).toLocaleString()}
+                  </span>
+                  {h.remarks && (
+                    <p
+                      style={{
+                        margin: '4px 0 0',
+                        color: C.brown,
+                        fontSize: 13,
+                      }}
+                    >
+                      {h.remarks}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <Text style={{ color: C.gray }}>No history yet.</Text>
+          )}
+        </Card>
+      </div>
+
+      {/* Deduct Deposit Modal */}
+      <Modal
+        title="Deduct Deposit"
+        open={deductOpen}
+        onOk={submitDeduct}
+        onCancel={() => setDeductOpen(false)}
+        okText="Submit Deduction"
+        okButtonProps={{ style: { background: C.green, borderColor: C.green } }}
+      >
+        <div style={{ marginBottom: 16 }}>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: 6,
+              fontWeight: 500,
+              color: '#333',
+            }}
+          >
+            Deduction Amount (₱):
+          </label>
+          <InputNumber
+            style={{ width: '100%' }}
+            prefix="₱"
+            value={deductAmount}
+            onChange={(val) => setDeductAmount(val)}
+            placeholder="e.g. 500"
+          />
+        </div>
+        <div>
+          <label
+            style={{
+              display: 'block',
+              marginBottom: 6,
+              fontWeight: 500,
+              color: '#333',
+            }}
+          >
+            Reason:
+          </label>
+          <TextArea
+            rows={3}
+            value={deductReason}
+            onChange={(e) => setDeductReason(e.target.value)}
+            placeholder="Describe damage or loss..."
+          />
+        </div>
+      </Modal>
+    </div>
+  );
+}

@@ -79,10 +79,11 @@ const getPaymentsByBooking = async (req, res) => {
     const booking = await BookingModel.findById(req.params.bookingId);
     if (!booking) return res.status(404).json({ error: 'Booking not found' });
 
-    if (
-      req.user.role !== 'admin' &&
-      booking.user.toString() !== req.user.id
-    ) {
+    const isStaffOrAdmin =
+      req.user.role === 'staff' || req.user.role === 'admin';
+    const isOwner = booking.user.toString() === req.user.id;
+
+    if (!isStaffOrAdmin && !isOwner) {
       return res.status(403).json({ error: 'Access denied' });
     }
 

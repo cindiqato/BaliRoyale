@@ -21,7 +21,6 @@ const C = {
   gold: '#C5A46D',
   white: '#FFFFFF',
   border: '#E2DCD5',
-  text: '#333333',
 };
 
 const navLinkStyle = {
@@ -42,13 +41,6 @@ const Navbar = () => {
     logout();
     navigate('/login');
   };
-
-  const dashboardLink =
-    user?.role === 'admin'
-      ? '/admin'
-      : user?.role === 'staff'
-      ? '/staff'
-      : '/guest';
 
   return (
     <nav
@@ -80,13 +72,19 @@ const Navbar = () => {
 
       {/* Middle links */}
       <Space size={24} wrap style={{ justifyContent: 'center' }}>
+        {/* Home - always visible */}
         <Link to="/" style={navLinkStyle}>
           <HomeOutlined /> Home
         </Link>
-        <Link to="/packages" style={navLinkStyle}>
-          <AppstoreOutlined /> Packages
-        </Link>
 
+        {/* Packages - visible to public and guests only */}
+        {(!user || user.role === 'guest') && (
+          <Link to="/packages" style={navLinkStyle}>
+            <AppstoreOutlined /> Packages
+          </Link>
+        )}
+
+        {/* Guest links */}
         {user && user.role === 'guest' && (
           <>
             <Link to="/guest" style={navLinkStyle}>
@@ -98,6 +96,7 @@ const Navbar = () => {
           </>
         )}
 
+        {/* Staff links */}
         {user && user.role === 'staff' && (
           <>
             <Link to="/staff" style={navLinkStyle}>
@@ -115,6 +114,7 @@ const Navbar = () => {
           </>
         )}
 
+        {/* Admin links */}
         {user && user.role === 'admin' && (
           <>
             <Link to="/admin" style={navLinkStyle}>

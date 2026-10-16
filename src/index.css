@@ -1,8 +1,12 @@
 body {
   margin: 0;
   font-family: Arial, Helvetica, sans-serif;
-  background: #f7f7f7;
+  background: #F4F1EA;
   color: #222;
+}
+
+html {
+  background: #F4F1EA;
 }
 
 a {

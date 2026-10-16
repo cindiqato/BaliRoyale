@@ -7,9 +7,10 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Restore from sessionStorage on mount (cleared when tab/browser closes)
   useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    const savedUser = localStorage.getItem('user');
+    const savedToken = sessionStorage.getItem('token');
+    const savedUser = sessionStorage.getItem('user');
 
     if (savedToken && savedUser) {
       setToken(savedToken);
@@ -19,15 +20,15 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = (userData, jwtToken) => {
-    localStorage.setItem('token', jwtToken);
-    localStorage.setItem('user', JSON.stringify(userData));
+    sessionStorage.setItem('token', jwtToken);
+    sessionStorage.setItem('user', JSON.stringify(userData));
     setUser(userData);
     setToken(jwtToken);
   };
 
   const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
     setUser(null);
     setToken(null);
   };

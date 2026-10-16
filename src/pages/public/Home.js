@@ -110,8 +110,8 @@ const Home = () => {
               margin: '0 auto 30px',
             }}
           >
-            Discover your perfect getaway in Rodriguez, Rizal, where comfort,
-            relaxation, and unforgettable moments come together.
+            Plan your perfect escape where comfort, relaxation, and
+            unforgettable moments come together.
           </p>
 
           <div
@@ -230,7 +230,7 @@ const Home = () => {
       {/* FEATURES */}
       <section
         style={{
-          padding: '70px 20px',
+          padding: '70px 20px 90px',
           background: '#EEEAE3',
           textAlign: 'center',
         }}
@@ -262,6 +262,7 @@ const Home = () => {
 
         <Row
           gutter={[22, 22]}
+          align="stretch"
           style={{ maxWidth: 1100, margin: '45px auto 0' }}
         >
           {features.map((feature) => (
@@ -274,6 +275,12 @@ const Home = () => {
                   padding: '35px 25px',
                   textAlign: 'center',
                   height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  minHeight: 260,
+                  boxSizing: 'border-box',
                 }}
               >
                 <div style={{ marginBottom: 20 }}>{feature.icon}</div>
@@ -283,7 +290,7 @@ const Home = () => {
                     fontFamily: 'Georgia, serif',
                     color: C.green,
                     fontSize: 19,
-                    marginBottom: 15,
+                    margin: '0 0 14px 0',
                   }}
                 >
                   {feature.title}
@@ -294,6 +301,7 @@ const Home = () => {
                     color: C.gray,
                     fontSize: 14,
                     lineHeight: 1.8,
+                    margin: 0,
                   }}
                 >
                   {feature.description}
@@ -302,71 +310,6 @@ const Home = () => {
             </Col>
           ))}
         </Row>
-      </section>
-
-      {/* CALL TO ACTION */}
-      <section
-        style={{
-          padding: '80px 20px',
-          textAlign: 'center',
-          background: C.cream,
-        }}
-      >
-        <p
-          style={{
-            color: C.gold,
-            fontSize: 12,
-            fontWeight: 'bold',
-            letterSpacing: 4,
-            textTransform: 'uppercase',
-            margin: 0,
-          }}
-        >
-          Plan Your Perfect Escape
-        </p>
-
-        <h2
-          style={{
-            fontFamily: 'Georgia, serif',
-            fontSize: 'clamp(28px, 4vw, 42px)',
-            fontWeight: 400,
-            color: C.green,
-            margin: '15px 0 20px',
-          }}
-        >
-          Your Next Getaway Awaits
-        </h2>
-
-        <p
-          style={{
-            color: C.gray,
-            lineHeight: 1.8,
-            marginBottom: 25,
-            maxWidth: 600,
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}
-        >
-          Book your exclusive resort getaway with ease. View our packages and
-          reserve your preferred date.
-        </p>
-
-        <Link to="/packages">
-          <Button
-            size="large"
-            style={{
-              background: C.gold,
-              borderColor: C.gold,
-              color: C.green,
-              fontWeight: 'bold',
-              borderRadius: 4,
-              height: 48,
-              padding: '0 32px',
-            }}
-          >
-            View Our Packages →
-          </Button>
-        </Link>
       </section>
     </div>
   );
