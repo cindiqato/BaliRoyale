@@ -4,13 +4,43 @@ const UserModel = require('../models/User');
 const { logAction } = require('./auditLogController');
 const sendBookingEmail = require('../middleware/mailer');
 
+const HOLD_MINUTES = 15;
+
 const generateBookingRef = () => {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   return 'BR-' + Date.now().toString().slice(-6) + '-' + random;
 };
 
+// Cancels any pending bookings whose 15-min hold has expired.
+// Called before availability checks and before creating new bookings.
+const sweepExpiredHolds = async () => {
+  const now = new Date();
+  const expired = await BookingModel.find({
+    status: 'pending',
+    isSlotBlocked: true,
+    expiresAt: { $lte: now },
+  });
+
+  for (const b of expired) {
+    b.status = 'payment_timeout';
+    b.isSlotBlocked = false;
+    b.isActiveConfirmed = false;
+    b.statusHistory.push({
+      status: 'payment_timeout',
+      changedAt: now,
+      remarks: 'Payment not submitted within 15 minutes',
+    });
+    await b.save();
+  }
+
+  return expired.length;
+};
+
 const createBooking = async (req, res) => {
   try {
+    // Free any expired holds so the slot is truly free
+    await sweepExpiredHolds();
+
     const {
       packageId,
       bookingDate,
@@ -58,6 +88,8 @@ const createBooking = async (req, res) => {
       )
     );
 
+    const expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000);
+
     const booking = new BookingModel({
       bookingRef: generateBookingRef(),
       user: req.user.id,
@@ -76,17 +108,31 @@ const createBooking = async (req, res) => {
         downPayment,
         balanceDue,
       },
+      status: 'pending',
+      isSlotBlocked: true,
+      expiresAt,
       specialRequests,
       statusHistory: [
         {
           status: 'pending',
           changedBy: req.user.id,
-          remarks: 'Booking created',
+          remarks: `Booking created. Payment due within ${HOLD_MINUTES} minutes.`,
         },
       ],
     });
 
-    await booking.save();
+    try {
+      await booking.save();
+    } catch (err) {
+      if (err.code === 11000) {
+        return res.status(409).json({
+          error:
+            'This slot is currently held by another guest. Please pick a different date or time.',
+        });
+      }
+      throw err;
+    }
+
     res.json({ message: 'Booking created', booking });
   } catch (err) {
     console.log(err);
@@ -96,6 +142,9 @@ const createBooking = async (req, res) => {
 
 const checkAvailability = async (req, res) => {
   try {
+    // Sweep first so expired holds don't block the slot
+    await sweepExpiredHolds();
+
     const { packageId, bookingDate, startTime } = req.body;
 
     if (!packageId || !bookingDate || !startTime) {
@@ -117,7 +166,7 @@ const checkAvailability = async (req, res) => {
       package: packageId,
       bookingDate: { $gte: dayStart, $lt: dayEnd },
       startTime,
-      isActiveConfirmed: true,
+      isSlotBlocked: true,
     });
 
     res.json({ available: !existing });
@@ -129,6 +178,7 @@ const checkAvailability = async (req, res) => {
 
 const getMyBookings = async (req, res) => {
   try {
+    await sweepExpiredHolds();
     const bookings = await BookingModel.find({
       user: req.user.id,
       isArchived: false,
@@ -145,6 +195,7 @@ const getMyBookings = async (req, res) => {
 
 const getAllBookings = async (req, res) => {
   try {
+    await sweepExpiredHolds();
     const bookings = await BookingModel.find({ isArchived: false })
       .populate('package', 'name baseRate')
       .populate('user', 'firstName lastName email')
@@ -159,6 +210,7 @@ const getAllBookings = async (req, res) => {
 
 const getBookingById = async (req, res) => {
   try {
+    await sweepExpiredHolds();
     const booking = await BookingModel.findById(req.params.id)
       .populate('package')
       .populate('user', 'firstName lastName email phone');
@@ -189,7 +241,9 @@ const confirmBooking = async (req, res) => {
       return res.status(400).json({ error: 'Only pending bookings can be confirmed' });
     }
 
+    booking.isSlotBlocked = true;
     booking.isActiveConfirmed = true;
+    booking.expiresAt = undefined;
     booking.status = 'confirmed';
     booking.statusHistory.push({
       status: 'confirmed',
@@ -223,7 +277,7 @@ const confirmBooking = async (req, res) => {
             <li><strong>Guests:</strong> ${booking.guestCount}</li>
             <li><strong>Total Amount:</strong> PHP ${booking.pricing.totalAmount}</li>
           </ul>
-          <p>Please proceed with your down payment if you haven't yet. We look forward to hosting you!</p>
+          <p>We look forward to hosting you!</p>
           <p>— Bali Royale</p>
         `,
       });
@@ -251,6 +305,8 @@ const checkInBooking = async (req, res) => {
     }
 
     booking.status = 'checked_in';
+    booking.isSlotBlocked = true;
+    booking.isActiveConfirmed = true;
     booking.statusHistory.push({
       status: 'checked_in',
       changedBy: req.user.id,
@@ -274,6 +330,7 @@ const completeBooking = async (req, res) => {
       return res.status(400).json({ error: 'Only checked-in bookings can be completed' });
     }
 
+    booking.isSlotBlocked = false;
     booking.isActiveConfirmed = false;
     booking.status = 'completed';
     booking.statusHistory.push({
@@ -299,6 +356,7 @@ const noShowBooking = async (req, res) => {
       return res.status(400).json({ error: 'Only confirmed bookings can be marked no-show' });
     }
 
+    booking.isSlotBlocked = false;
     booking.isActiveConfirmed = false;
     booking.status = 'no_show';
     booking.depositStatus = 'deducted';
@@ -327,7 +385,7 @@ const requestCancel = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+    if (['cancelled', 'completed', 'no_show', 'payment_timeout'].includes(booking.status)) {
       return res.status(400).json({ error: 'This booking can no longer be cancelled' });
     }
 
@@ -362,6 +420,7 @@ const approveCancel = async (req, res) => {
     }
 
     booking.cancelStatus = 'approved';
+    booking.isSlotBlocked = false;
     booking.isActiveConfirmed = false;
     booking.status = 'cancelled';
     booking.statusHistory.push({
@@ -442,7 +501,7 @@ const requestReschedule = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (['cancelled', 'completed', 'no_show'].includes(booking.status)) {
+    if (['cancelled', 'completed', 'no_show', 'payment_timeout'].includes(booking.status)) {
       return res.status(400).json({ error: 'This booking can no longer be rescheduled' });
     }
 

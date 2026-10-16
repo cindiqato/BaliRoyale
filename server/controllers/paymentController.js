@@ -2,8 +2,32 @@ const PaymentModel = require('../models/Payment');
 const BookingModel = require('../models/Booking');
 const { logAction } = require('./auditLogController');
 
+const HOLD_MINUTES = 15;
+
+const sweepExpiredHolds = async () => {
+  const now = new Date();
+  const expired = await BookingModel.find({
+    status: 'pending',
+    isSlotBlocked: true,
+    expiresAt: { $lte: now },
+  });
+  for (const b of expired) {
+    b.status = 'payment_timeout';
+    b.isSlotBlocked = false;
+    b.isActiveConfirmed = false;
+    b.statusHistory.push({
+      status: 'payment_timeout',
+      changedAt: now,
+      remarks: 'Payment not submitted within 15 minutes',
+    });
+    await b.save();
+  }
+};
+
 const submitPayment = async (req, res) => {
   try {
+    await sweepExpiredHolds();
+
     const { bookingId, type, amount, method, referenceNo } = req.body;
 
     if (!bookingId || !type || !amount || !method) {
@@ -21,8 +45,10 @@ const submitPayment = async (req, res) => {
       return res.status(403).json({ error: 'Access denied' });
     }
 
-    if (['cancelled', 'no_show'].includes(booking.status)) {
-      return res.status(400).json({ error: 'Cannot pay for a cancelled booking' });
+    if (['cancelled', 'no_show', 'payment_timeout'].includes(booking.status)) {
+      return res.status(400).json({
+        error: 'This booking can no longer accept payments',
+      });
     }
 
     const payment = new PaymentModel({
@@ -37,6 +63,20 @@ const submitPayment = async (req, res) => {
     });
 
     await payment.save();
+
+    // Once any payment is submitted, the 15-minute timer stops.
+    // The slot stays blocked until staff confirms/cancels.
+    if (booking.expiresAt) {
+      booking.expiresAt = undefined;
+      booking.statusHistory.push({
+        status: 'payment_submitted',
+        changedBy: req.user.id,
+        changedAt: new Date(),
+        remarks: `${type.replace('_', ' ')} of ₱${amount} submitted. Awaiting staff verification.`,
+      });
+      await booking.save();
+    }
+
     res.json({ message: 'Payment submitted', payment });
   } catch (err) {
     console.log(err);
@@ -211,6 +251,11 @@ const recordCashPayment = async (req, res) => {
     });
 
     await payment.save();
+
+    // Stop any active hold timer
+    if (booking.expiresAt) {
+      booking.expiresAt = undefined;
+    }
 
     const allPayments = await PaymentModel.find({
       booking: booking._id,

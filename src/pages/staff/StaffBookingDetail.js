@@ -28,6 +28,7 @@ import {
   CalendarOutlined,
   FileImageOutlined,
   FileTextOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 import api from '../../api/axios';
 
@@ -53,9 +54,10 @@ const statusColors = {
   completed: { color: '#6E5A48', bg: '#6E5A4820', label: 'Completed' },
   cancelled: { color: '#8A7A68', bg: '#8A7A6820', label: 'Cancelled' },
   no_show: { color: '#333333', bg: '#33333320', label: 'No Show' },
+  payment_timeout: { color: '#A13E3E', bg: '#F2DCD5', label: 'Payment Timeout' },
 };
 
-export default function StaffBookingDetail() {
+function StaffBookingDetail() {
   const { id } = useParams();
 
   const [booking, setBooking] = useState(null);
@@ -64,8 +66,8 @@ export default function StaffBookingDetail() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [acting, setActing] = useState(false);
+  const [remaining, setRemaining] = useState(null);
 
-  // Deduct deposit modal
   const [deductOpen, setDeductOpen] = useState(false);
   const [deductAmount, setDeductAmount] = useState(null);
   const [deductReason, setDeductReason] = useState('');
@@ -90,6 +92,45 @@ export default function StaffBookingDetail() {
     loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  useEffect(() => {
+    if (
+      !booking ||
+      booking.status !== 'pending' ||
+      !booking.expiresAt ||
+      booking.paymentStatus !== 'unpaid'
+    ) {
+      setRemaining(null);
+      return;
+    }
+
+    const target = new Date(booking.expiresAt).getTime();
+
+    const tick = () => {
+      const diff = target - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [booking]);
+
+  useEffect(() => {
+    if (remaining === 0 && booking?.status === 'pending') {
+      const timeout = setTimeout(() => loadData(), 3000);
+      return () => clearTimeout(timeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining]);
+
+  const formatCountdown = (ms) => {
+    if (ms == null) return '';
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   const act = async (action, body = null) => {
     setError('');
@@ -154,7 +195,9 @@ export default function StaffBookingDetail() {
 
   if (error && !booking) {
     return (
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
+      <div
+        style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}
+      >
         <Alert message="Error" description={error} type="error" showIcon />
       </div>
     );
@@ -162,12 +205,13 @@ export default function StaffBookingDetail() {
 
   if (!booking) return null;
 
-  // Determine which workflow actions are available
   const canConfirm = booking.status === 'pending';
   const canCheckIn = booking.status === 'confirmed';
   const canComplete = booking.status === 'checked_in';
   const canSettleDeposit =
     booking.status === 'completed' && booking.depositStatus === 'held';
+
+  const isExpired = booking.status === 'payment_timeout';
 
   return (
     <div
@@ -190,7 +234,6 @@ export default function StaffBookingDetail() {
           </Link>
         </p>
 
-        {/* Header */}
         <div
           style={{
             display: 'flex',
@@ -219,6 +262,43 @@ export default function StaffBookingDetail() {
           {renderStatusTag(booking.status)}
         </div>
 
+        {remaining !== null && (
+          <Alert
+            icon={<ClockCircleOutlined />}
+            message={
+              <span>
+                <strong>
+                  Guest's payment hold expires in{' '}
+                  {formatCountdown(remaining)}
+                </strong>{' '}
+                — after this, the slot frees up if no payment is submitted.
+              </span>
+            }
+            type="warning"
+            showIcon={false}
+            style={{
+              marginBottom: 16,
+              background: '#FFF7E6',
+              border: '1px solid #FFD591',
+              borderRadius: 8,
+            }}
+          />
+        )}
+
+        {isExpired && (
+          <Alert
+            message={
+              <span>
+                <strong>Payment timeout.</strong> The guest did not submit a
+                payment within 15 minutes. The slot has been released.
+              </span>
+            }
+            type="error"
+            showIcon
+            style={{ marginBottom: 16, borderRadius: 8 }}
+          />
+        )}
+
         {message && (
           <Alert
             message={message}
@@ -240,7 +320,6 @@ export default function StaffBookingDetail() {
           />
         )}
 
-        {/* Workflow Actions */}
         <Card
           bordered={false}
           style={{
@@ -333,7 +412,6 @@ export default function StaffBookingDetail() {
           </Space>
         </Card>
 
-        {/* Booking Summary */}
         <Card
           bordered={false}
           style={{
@@ -481,7 +559,6 @@ export default function StaffBookingDetail() {
           )}
         </Card>
 
-        {/* Pricing Breakdown */}
         <Card
           bordered={false}
           style={{
@@ -498,11 +575,7 @@ export default function StaffBookingDetail() {
           <Descriptions
             column={1}
             size="small"
-            labelStyle={{
-              fontWeight: 600,
-              color: C.gray,
-              width: 200,
-            }}
+            labelStyle={{ fontWeight: 600, color: C.gray, width: 200 }}
           >
             <Descriptions.Item label="Base Rate">
               ₱{booking.pricing?.baseRate?.toLocaleString()}
@@ -527,7 +600,6 @@ export default function StaffBookingDetail() {
           </Descriptions>
         </Card>
 
-        {/* Payment History */}
         <Card
           bordered={false}
           style={{
@@ -543,9 +615,7 @@ export default function StaffBookingDetail() {
           </Title>
 
           {payments.length === 0 ? (
-            <Text style={{ color: C.gray }}>
-              No payments submitted yet.
-            </Text>
+            <Text style={{ color: C.gray }}>No payments submitted yet.</Text>
           ) : (
             <List
               dataSource={payments}
@@ -643,7 +713,6 @@ export default function StaffBookingDetail() {
           )}
         </Card>
 
-        {/* Status History */}
         <Card
           bordered={false}
           style={{
@@ -706,7 +775,6 @@ export default function StaffBookingDetail() {
         </Card>
       </div>
 
-      {/* Deduct Deposit Modal */}
       <Modal
         title="Deduct Deposit"
         open={deductOpen}
@@ -756,3 +824,5 @@ export default function StaffBookingDetail() {
     </div>
   );
 }
+
+export default StaffBookingDetail;

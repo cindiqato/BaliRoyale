@@ -16,6 +16,7 @@ import {
 import {
   ArrowLeftOutlined,
   CreditCardOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -41,6 +42,7 @@ export default function BookingDetail() {
   const [error, setError] = useState('');
   const [actionMsg, setActionMsg] = useState('');
   const [actionErr, setActionErr] = useState('');
+  const [remaining, setRemaining] = useState(null);
 
   const [showCancel, setShowCancel] = useState(false);
   const [cancelReason, setCancelReason] = useState('');
@@ -66,6 +68,49 @@ export default function BookingDetail() {
     loadBooking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
+
+  // Countdown timer for pending bookings with an active hold
+  useEffect(() => {
+    if (
+      !booking ||
+      booking.status !== 'pending' ||
+      !booking.expiresAt ||
+      booking.paymentStatus !== 'unpaid'
+    ) {
+      setRemaining(null);
+      return;
+    }
+
+    const target = new Date(booking.expiresAt).getTime();
+
+    const tick = () => {
+      const diff = target - Date.now();
+      setRemaining(diff > 0 ? diff : 0);
+    };
+
+    tick();
+    const interval = setInterval(tick, 1000);
+    return () => clearInterval(interval);
+  }, [booking]);
+
+  // When timer hits zero, reload once so the backend sweep can update status
+  useEffect(() => {
+    if (remaining === 0 && booking?.status === 'pending') {
+      const timeout = setTimeout(() => {
+        loadBooking();
+      }, 3000);
+      return () => clearTimeout(timeout);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining]);
+
+  const formatCountdown = (ms) => {
+    if (ms == null) return '';
+    const totalSec = Math.floor(ms / 1000);
+    const m = Math.floor(totalSec / 60);
+    const s = totalSec % 60;
+    return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   const submitCancel = async () => {
     if (!window.confirm('Request to cancel this booking?')) return;
@@ -126,14 +171,14 @@ export default function BookingDetail() {
   if (!booking) return null;
 
   const canAct = ['pending', 'confirmed'].includes(booking.status);
+  const isExpired = booking.status === 'payment_timeout';
 
   const renderStatusTag = (status) => {
-    switch (status?.toLowerCase()) {
+    switch (status) {
       case 'confirmed':
-      case 'verified':
         return (
           <Tag style={{ background: C.medium, color: '#FAFAF8', border: 'none' }}>
-            {status.toUpperCase()}
+            CONFIRMED
           </Tag>
         );
       case 'pending':
@@ -142,8 +187,13 @@ export default function BookingDetail() {
             PENDING
           </Tag>
         );
+      case 'payment_timeout':
+        return (
+          <Tag style={{ background: '#F2DCD5', color: '#A13E3E', border: 'none' }}>
+            PAYMENT TIMEOUT
+          </Tag>
+        );
       case 'cancelled':
-      case 'rejected':
         return <Tag color="error">CANCELLED</Tag>;
       default:
         return <Tag color="default">{status?.toUpperCase()}</Tag>;
@@ -191,6 +241,43 @@ export default function BookingDetail() {
             </Title>
             <Space>{renderStatusTag(booking.status)}</Space>
           </div>
+
+          {/* Countdown banner */}
+          {remaining !== null && (
+            <Alert
+              icon={<ClockCircleOutlined />}
+              message={
+                <span>
+                  <strong>Payment due in {formatCountdown(remaining)}</strong> —
+                  upload your down payment to secure this slot.
+                </span>
+              }
+              type="warning"
+              showIcon={false}
+              style={{
+                marginBottom: 16,
+                background: '#FFF7E6',
+                border: '1px solid #FFD591',
+                borderRadius: 8,
+              }}
+            />
+          )}
+
+          {/* Timeout banner */}
+          {isExpired && (
+            <Alert
+              message={
+                <span>
+                  <strong>Payment timeout.</strong> Your booking expired because
+                  no payment was submitted within 15 minutes. Please create a
+                  new booking.
+                </span>
+              }
+              type="error"
+              showIcon
+              style={{ marginBottom: 16, borderRadius: 8 }}
+            />
+          )}
 
           {actionMsg && (
             <Alert
@@ -324,8 +411,10 @@ export default function BookingDetail() {
                     color: C.gray,
                   }}
                 >
-                  <strong style={{ color: '#333' }}>{h.status}</strong> —{' '}
-                  {new Date(h.changedAt).toLocaleString()}
+                  <strong style={{ color: '#333' }}>
+                    {h.status.replace('_', ' ')}
+                  </strong>{' '}
+                  — {new Date(h.changedAt).toLocaleString()}
                   {h.remarks && ` — ${h.remarks}`}
                 </div>
               ))}

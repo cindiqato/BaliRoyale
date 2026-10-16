@@ -17,6 +17,7 @@ import {
   CheckCircleOutlined,
   CloseCircleOutlined,
   DollarOutlined,
+  ClockCircleOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -86,7 +87,6 @@ export default function NewBooking() {
       .finally(() => setLoading(false));
   }, [preselectedId]);
 
-  // Update selectedPkg + times when packageId changes
   useEffect(() => {
     if (!form.packageId) return;
     const pkg = packages.find((p) => p._id === form.packageId);
@@ -156,9 +156,7 @@ export default function NewBooking() {
       });
       setAvailability(res.data.available);
     } catch (err) {
-      setError(
-        err.response?.data?.error || 'Failed to check availability'
-      );
+      setError(err.response?.data?.error || 'Failed to check availability');
     } finally {
       setChecking(false);
     }
@@ -181,13 +179,20 @@ export default function NewBooking() {
         guestCount: Number(form.guestCount),
         specialRequests: form.specialRequests,
       });
-      setMessage('Booking created! Redirecting...');
-      setTimeout(
-        () => navigate(`/guest/bookings/${res.data.booking._id}`),
-        1200
-      );
+
+      // Redirect straight to Upload Payment with a success message
+      const bookingId = res.data.booking._id;
+      navigate(`/guest/payments/${bookingId}?new=1`);
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to create booking');
+      // Handle 409 (slot held by another guest) with a clear message
+      if (err.response?.status === 409) {
+        setError(
+          err.response.data.error ||
+            'This slot is currently held by another guest. Please try again later.'
+        );
+      } else {
+        setError(err.response?.data?.error || 'Failed to create booking');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -234,6 +239,26 @@ export default function NewBooking() {
             border: `1px solid ${C.border}`,
           }}
         >
+          {/* Hold Notice */}
+          <Alert
+            message={
+              <span>
+                <ClockCircleOutlined style={{ marginRight: 6 }} />
+                <strong>Heads up:</strong> once you submit, your selected date
+                is held for 15 minutes. Upload your down payment within that
+                window to secure the slot.
+              </span>
+            }
+            type="info"
+            showIcon={false}
+            style={{
+              marginBottom: 20,
+              background: '#E8EFE5',
+              border: `1px solid ${C.medium}`,
+              borderRadius: 8,
+            }}
+          />
+
           {error && (
             <Alert
               message={error}
@@ -378,22 +403,12 @@ export default function NewBooking() {
                 </Button>
 
                 {availability === true && (
-                  <span
-                    style={{
-                      color: C.medium,
-                      fontWeight: 'bold',
-                    }}
-                  >
+                  <span style={{ color: C.medium, fontWeight: 'bold' }}>
                     <CheckCircleOutlined /> Available
                   </span>
                 )}
                 {availability === false && (
-                  <span
-                    style={{
-                      color: '#ff4d4f',
-                      fontWeight: 'bold',
-                    }}
-                  >
+                  <span style={{ color: '#ff4d4f', fontWeight: 'bold' }}>
                     <CloseCircleOutlined /> Not available
                   </span>
                 )}
@@ -411,10 +426,7 @@ export default function NewBooking() {
                   marginBottom: '24px',
                 }}
               >
-                <Title
-                  level={5}
-                  style={{ marginTop: 0, color: C.green }}
-                >
+                <Title level={5} style={{ marginTop: 0, color: C.green }}>
                   <DollarOutlined style={{ color: C.green }} /> Pricing Preview
                 </Title>
                 <Descriptions
@@ -438,10 +450,7 @@ export default function NewBooking() {
                       </Text>
                     }
                   >
-                    <Text
-                      strong
-                      style={{ color: C.green, fontSize: '15px' }}
-                    >
+                    <Text strong style={{ color: C.green, fontSize: '15px' }}>
                       ₱{pricing.totalAmount.toLocaleString()}
                     </Text>
                   </Descriptions.Item>
@@ -470,7 +479,9 @@ export default function NewBooking() {
                 fontWeight: 600,
               }}
             >
-              {submitting ? 'Creating Booking...' : 'Create Booking'}
+              {submitting
+                ? 'Reserving slot...'
+                : 'Create Booking & Pay Down Payment'}
             </Button>
           </form>
         </Card>
