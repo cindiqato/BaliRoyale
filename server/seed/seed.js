@@ -12,7 +12,7 @@ const AuditLog = require('../models/AuditLog');
 
 const MONGO_URI = 'mongodb://localhost:27017/baliroyale';
 
-// ---------- Helpers ----------
+// ---------- Date helpers ----------
 
 const daysAgo = (n) => {
   const d = new Date();
@@ -28,16 +28,26 @@ const daysFromNow = (n) => {
   return d;
 };
 
-const ref = (i) => `BR-SEED-${String(i).padStart(4, '0')}`;
+const utcMidnight = (date) =>
+  new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+  );
 
-// ---------- Main ----------
+// Generates a booking reference identical in format to the live system:
+// BR-{6-digit timestamp slice}-{6-char alnum}
+const generateRef = () => {
+  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
+  const stamp = String(Date.now()).slice(-6);
+  return `BR-${stamp}-${random}`;
+};
+
+// ---------- Main seed ----------
 
 const seed = async () => {
   try {
     await mongoose.connect(MONGO_URI);
     console.log('Connected to MongoDB');
 
-    // Wipe collections
     await Promise.all([
       User.deleteMany({}),
       Package.deleteMany({}),
@@ -74,12 +84,6 @@ const seed = async () => {
     );
 
     const users = await User.insertMany(hashedUsers);
-
-    // Preset reset token for Claire
-    const claire = users.find((u) => u.email === 'guest1.bali@yopmail.com');
-    claire.resetToken = 'demo-reset-token-123';
-    claire.resetExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    await claire.save();
 
     const admin = users.find((u) => u.role === 'admin');
     const staff = users.filter((u) => u.role === 'staff');
@@ -150,52 +154,58 @@ const seed = async () => {
       return { baseRate, excessPaxFee, addOnsFee, securityDeposit, totalAmount, downPayment, balanceDue };
     };
 
-    const statusHistoryFor = (userId, statuses) =>
-      statuses.map((s) => ({
-        status: s.status,
-        changedBy: userId,
-        changedAt: s.at,
-        remarks: s.remarks || '',
-      }));
+    const HOLD_MINUTES = 15;
 
-    // 25 bookings
     const bookingDefs = [
-      // ---- Completed (12) ----
-      { guest: 0,  pkg: 0, days: 60, guests: 10, status: 'completed' },
-      { guest: 1,  pkg: 1, days: 58, guests: 12, status: 'completed' },
-      { guest: 2,  pkg: 2, days: 52, guests: 8,  status: 'completed' },
-      { guest: 3,  pkg: 0, days: 48, guests: 10, status: 'completed' },
-      { guest: 4,  pkg: 3, days: 45, guests: 15, status: 'completed' },
-      { guest: 5,  pkg: 1, days: 40, guests: 10, status: 'completed' },
-      { guest: 6,  pkg: 0, days: 35, guests: 14, status: 'completed' },
-      { guest: 7,  pkg: 4, days: 30, guests: 22, status: 'completed' },
-      { guest: 8,  pkg: 2, days: 25, guests: 10, status: 'completed' },
-      { guest: 9,  pkg: 0, days: 20, guests: 12, status: 'completed' },
-      { guest: 0,  pkg: 5, days: 15, guests: 28, status: 'completed' },
-      { guest: 1,  pkg: 3, days: 10, guests: 12, status: 'completed' },
-      // ---- Cancelled (2) ----
-      { guest: 2,  pkg: 0, days: 8,  guests: 10, status: 'cancelled' },
-      { guest: 3,  pkg: 1, days: 6,  guests: 12, status: 'cancelled' },
-      // ---- No-show (1) ----
-      { guest: 4,  pkg: 0, days: 4,  guests: 10, status: 'no_show' },
-      // ---- Checked-in (2) ----
-      { guest: 5,  pkg: 2, days: -1, guests: 10, status: 'checked_in' },
-      { guest: 6,  pkg: 1, days: 0,  guests: 12, status: 'checked_in' },
-      // ---- Confirmed (3) ----
-      { guest: 7,  pkg: 0, days: -7, guests: 10, status: 'confirmed' },
-      { guest: 8,  pkg: 3, days: -14, guests: 15, status: 'confirmed' },
-      { guest: 9,  pkg: 4, days: -21, guests: 20, status: 'confirmed' },
-      // ---- Rescheduled (2) ----
-      { guest: 0,  pkg: 1, days: -30, guests: 10, status: 'rescheduled' },
-      { guest: 1,  pkg: 0, days: -40, guests: 12, status: 'rescheduled' },
-      // ---- Pending (3) ----
-      { guest: 2,  pkg: 2, days: -50, guests: 10, status: 'pending' },
-      { guest: 3,  pkg: 0, days: -55, guests: 10, status: 'pending' },
-      { guest: 4,  pkg: 1, days: -60, guests: 10, status: 'pending' },
+      // ---------- COMPLETED (12) ----------
+      { guest: 0, pkg: 0, days: -60, guests: 10, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 1, pkg: 1, days: -58, guests: 12, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 2, pkg: 2, days: -52, guests: 8,  status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 3, pkg: 0, days: -48, guests: 10, status: 'completed', payment: 'full_paid',  deposit: 'deducted', depositAmount: 500, depositReason: 'Broken glassware' },
+      { guest: 4, pkg: 3, days: -45, guests: 15, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 5, pkg: 1, days: -40, guests: 10, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 6, pkg: 0, days: -35, guests: 14, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 7, pkg: 4, days: -30, guests: 22, status: 'completed', payment: 'full_paid',  deposit: 'deducted', depositAmount: 1000, depositReason: 'Broken table' },
+      { guest: 8, pkg: 2, days: -25, guests: 10, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 9, pkg: 0, days: -20, guests: 12, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 0, pkg: 5, days: -15, guests: 28, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+      { guest: 1, pkg: 3, days: -10, guests: 12, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
+
+      // ---------- CANCELLED WITH REFUND (3) ----------
+      { guest: 2, pkg: 0, days: -8,  guests: 10, status: 'cancelled', payment: 'refunded', cancelReason: 'Change of plans' },
+      { guest: 3, pkg: 1, days: -6,  guests: 12, status: 'cancelled', payment: 'refunded', cancelReason: 'Family emergency' },
+      { guest: 4, pkg: 2, days: -5,  guests: 10, status: 'cancelled', payment: 'refunded', cancelReason: 'Weather concerns' },
+
+      // ---------- CANCELLED NO PAYMENT (1) ----------
+      { guest: 5, pkg: 0, days: -4, guests: 10, status: 'cancelled', payment: 'unpaid', cancelReason: 'Found another venue' },
+
+      // ---------- NO-SHOW (1) ----------
+      { guest: 6, pkg: 1, days: -3, guests: 10, status: 'no_show', payment: 'down_paid', deposit: 'deducted', depositAmount: 3000, depositReason: 'No-show - deposit forfeited' },
+
+      // ---------- CHECKED-IN (2) ----------
+      { guest: 7, pkg: 3, days: 0,  guests: 15, status: 'checked_in', payment: 'full_paid', deposit: 'held' },
+      { guest: 8, pkg: 1, days: 0,  guests: 10, status: 'checked_in', payment: 'full_paid', deposit: 'held' },
+
+      // ---------- CONFIRMED (4) ----------
+      { guest: 9, pkg: 0, days: 7,  guests: 10, status: 'confirmed', payment: 'full_paid', deposit: 'held' },
+      { guest: 0, pkg: 2, days: 12, guests: 10, status: 'confirmed', payment: 'down_paid', deposit: 'held' },
+      { guest: 1, pkg: 0, days: 18, guests: 12, status: 'confirmed', payment: 'down_paid', deposit: 'held' },
+      { guest: 2, pkg: 4, days: 25, guests: 20, status: 'confirmed', payment: 'down_paid', deposit: 'held' },
+
+      // ---------- RESCHEDULED (1) ----------
+      { guest: 3, pkg: 3, days: 30, guests: 12, status: 'confirmed', payment: 'full_paid', deposit: 'held', rescheduled: true },
+
+      // ---------- PENDING WITH ACTIVE HOLD (1) ----------
+      { guest: 4, pkg: 2, days: 40, guests: 10, status: 'pending', payment: 'hold_active' },
+
+      // ---------- PAYMENT TIMEOUT (1) ----------
+      { guest: 5, pkg: 0, days: 45, guests: 10, status: 'payment_timeout', payment: 'expired' },
+
+      // ---------- PENDING WITH PAYMENT SUBMITTED (1) ----------
+      { guest: 6, pkg: 1, days: 50, guests: 10, status: 'pending', payment: 'payment_submitted' },
     ];
 
-    const bookings = [];
-    let idx = 1;
+    const insertedBookings = [];
 
     for (const def of bookingDefs) {
       const pkg = packages[def.pkg];
@@ -203,24 +213,30 @@ const seed = async () => {
       const pricing = calcPricing(pkg, def.guests);
 
       const bookingDate =
-        def.days >= 0 ? daysAgo(def.days) : daysFromNow(-def.days);
+        def.days >= 0 ? daysFromNow(def.days) : daysAgo(-def.days);
+      const bookingDateUTC = utcMidnight(bookingDate);
 
-      const created = new Date(bookingDate);
+      const created = new Date(bookingDateUTC);
       created.setDate(created.getDate() - 7);
 
-      let booking = {
-        bookingRef: ref(idx),
+      const bookingRef = generateRef();
+
+      const booking = {
+        bookingRef,
         user: guest._id,
         package: pkg._id,
-        bookingDate,
+        bookingDate: bookingDateUTC,
         startTime: pkg.startTime,
         endTime: pkg.endTime,
         guestCount: def.guests,
         addOns: [],
         pricing,
-        status: 'pending',
+        status: def.status,
         paymentStatus: 'unpaid',
-        depositStatus: 'held',
+        depositStatus: def.deposit || 'held',
+        depositDeduction: def.depositAmount || 0,
+        depositReason: def.depositReason || undefined,
+        isSlotBlocked: false,
         isActiveConfirmed: false,
         isArchived: false,
         statusHistory: [],
@@ -228,168 +244,236 @@ const seed = async () => {
         updatedAt: created,
       };
 
-      const h = [];
-      const at = (offset) => {
-        const d = new Date(bookingDate);
-        d.setDate(d.getDate() - offset);
+      const at = (offsetDays, hours = 12) => {
+        const d = new Date(bookingDateUTC);
+        d.setDate(d.getDate() + offsetDays);
+        d.setHours(hours, 0, 0, 0);
         return d;
       };
 
-      h.push({ status: 'pending', changedBy: guest._id, changedAt: at(7), remarks: 'Booking created' });
+      const h = [];
+      h.push({
+        status: 'pending',
+        changedBy: guest._id,
+        changedAt: at(-7),
+        remarks: 'Booking created. Payment due within 15 minutes.',
+      });
 
-      if (['completed', 'cancelled', 'no_show', 'checked_in', 'confirmed', 'rescheduled'].includes(def.status)) {
-        h.push({ status: 'confirmed', changedBy: staff[0]._id, changedAt: at(6), remarks: 'Booking confirmed' });
+      const paymentsForBooking = [];
+
+      if (def.payment === 'full_paid' || def.payment === 'down_paid' || def.payment === 'refunded') {
+        h.push({
+          status: 'payment_submitted',
+          changedBy: guest._id,
+          changedAt: at(-7, 13),
+          remarks: 'Down payment submitted. Awaiting staff verification.',
+        });
+        h.push({
+          status: 'confirmed',
+          changedBy: staff[0]._id,
+          changedAt: at(-6),
+          remarks: 'Auto-confirmed after verification of down payment',
+        });
+
+        paymentsForBooking.push({
+          type: 'down_payment',
+          amount: pricing.downPayment,
+          method: def.pkg % 2 === 0 ? 'gcash' : 'bank',
+          status: 'verified',
+          submittedAt: at(-7, 13),
+          verifiedAt: at(-6),
+        });
+
+        if (def.payment === 'full_paid') {
+          paymentsForBooking.push({
+            type: 'balance',
+            amount: pricing.balanceDue,
+            method: def.pkg % 2 === 0 ? 'bank' : 'gcash',
+            status: 'verified',
+            submittedAt: at(-2),
+            verifiedAt: at(-1),
+          });
+        }
       }
 
-      if (['completed', 'checked_in'].includes(def.status)) {
-        h.push({ status: 'checked_in', changedBy: staff[0]._id, changedAt: at(0), remarks: 'Guest checked in' });
+      if (def.status === 'checked_in' || def.status === 'completed') {
+        h.push({
+          status: 'checked_in',
+          changedBy: staff[0]._id,
+          changedAt: at(0, 14),
+          remarks: 'Guest checked in',
+        });
       }
 
       if (def.status === 'completed') {
-        h.push({ status: 'completed', changedBy: staff[0]._id, changedAt: at(-1), remarks: 'Booking completed' });
-        h.push({ status: 'deposit_returned', changedBy: staff[0]._id, changedAt: at(-1), remarks: 'Security deposit returned' });
+        h.push({
+          status: 'completed',
+          changedBy: staff[0]._id,
+          changedAt: at(1, 9),
+          remarks: 'Booking completed. Full payment settled.',
+        });
+        if (def.deposit === 'returned') {
+          h.push({
+            status: 'deposit_returned',
+            changedBy: staff[0]._id,
+            changedAt: at(1, 11),
+            remarks: 'Security deposit returned',
+          });
+        } else if (def.deposit === 'deducted') {
+          h.push({
+            status: 'deposit_deducted',
+            changedBy: staff[0]._id,
+            changedAt: at(1, 11),
+            remarks: `Deducted ₱${def.depositAmount}: ${def.depositReason}`,
+          });
+        }
       }
 
       if (def.status === 'cancelled') {
-        booking.cancelRequested = false;
-        booking.cancelStatus = 'approved';
-        booking.cancelReason = 'Guest requested cancellation';
-        h.push({ status: 'cancel_requested', changedBy: guest._id, changedAt: at(3), remarks: 'Guest requested cancellation' });
-        h.push({ status: 'cancelled', changedBy: staff[0]._id, changedAt: at(2), remarks: 'Cancellation approved' });
+        h.push({
+          status: 'cancel_requested',
+          changedBy: guest._id,
+          changedAt: at(-5, 10),
+          remarks: def.cancelReason || 'No reason provided',
+        });
+        h.push({
+          status: 'cancelled',
+          changedBy: staff[0]._id,
+          changedAt: at(-4, 10),
+          remarks: 'Cancellation approved',
+        });
       }
 
       if (def.status === 'no_show') {
-        booking.depositStatus = 'deducted';
-        booking.depositDeduction = 3000;
-        booking.depositReason = 'No-show - deposit forfeited';
-        h.push({ status: 'no_show', changedBy: staff[0]._id, changedAt: at(0), remarks: 'Guest did not show up' });
+        h.push({
+          status: 'no_show',
+          changedBy: staff[0]._id,
+          changedAt: at(0, 20),
+          remarks: 'Guest did not show up',
+        });
+        h.push({
+          status: 'deposit_deducted',
+          changedBy: staff[0]._id,
+          changedAt: at(0, 20),
+          remarks: 'Deposit forfeited',
+        });
       }
 
-      if (def.status === 'rescheduled') {
-        booking.rescheduleRequested = false;
-        booking.rescheduleStatus = 'approved';
-        h.push({ status: 'reschedule_requested', changedBy: guest._id, changedAt: at(4), remarks: 'Requested new date' });
-        h.push({ status: 'reschedule_approved', changedBy: staff[0]._id, changedAt: at(3), remarks: 'Reschedule approved' });
+      if (def.rescheduled) {
+        h.push({
+          status: 'reschedule_requested',
+          changedBy: guest._id,
+          changedAt: at(-3),
+          remarks: `Requested new date: ${bookingDateUTC.toDateString()}`,
+        });
+        h.push({
+          status: 'reschedule_approved',
+          changedBy: staff[0]._id,
+          changedAt: at(-2),
+          remarks: 'Reschedule approved',
+        });
+      }
+
+      if (def.payment === 'payment_submitted') {
+        h.push({
+          status: 'payment_submitted',
+          changedBy: guest._id,
+          changedAt: at(0),
+          remarks: 'Down payment submitted. Awaiting staff verification.',
+        });
+      }
+
+      if (def.payment === 'expired') {
+        h.push({
+          status: 'payment_timeout',
+          changedAt: at(0, 1),
+          remarks: 'Payment not submitted within 15 minutes',
+        });
       }
 
       booking.statusHistory = h;
 
-      // Final status
-      if (def.status === 'completed') booking.status = 'completed';
-      if (def.status === 'cancelled') booking.status = 'cancelled';
-      if (def.status === 'no_show') booking.status = 'no_show';
-      if (def.status === 'checked_in') booking.status = 'checked_in';
-      if (def.status === 'confirmed') booking.status = 'confirmed';
-      if (def.status === 'rescheduled') booking.status = 'confirmed';
-      if (def.status === 'pending') booking.status = 'pending';
-
-      // Active confirmed only for upcoming / in-progress
-      if (['confirmed', 'checked_in', 'rescheduled'].includes(def.status)) {
+      if (['confirmed', 'checked_in'].includes(def.status)) {
+        booking.isSlotBlocked = true;
         booking.isActiveConfirmed = true;
       }
+      if (def.status === 'pending' && def.payment === 'hold_active') {
+        booking.isSlotBlocked = true;
+        booking.expiresAt = new Date(Date.now() + HOLD_MINUTES * 60 * 1000);
+      }
+      if (def.status === 'pending' && def.payment === 'payment_submitted') {
+        booking.isSlotBlocked = true;
+      }
 
-      bookings.push(booking);
-      idx++;
+      if (def.payment === 'full_paid') booking.paymentStatus = 'paid';
+      else if (def.payment === 'down_paid') booking.paymentStatus = 'partial';
+      else if (def.payment === 'refunded') booking.paymentStatus = 'refunded';
+      else if (def.payment === 'payment_submitted') booking.paymentStatus = 'partial';
+
+      booking._paymentsToInsert = paymentsForBooking;
+      booking._bookingRef = bookingRef;
+
+      insertedBookings.push(booking);
     }
 
-    const insertedBookings = await Booking.insertMany(bookings);
-    console.log(`Inserted ${insertedBookings.length} bookings`);
+    // Insert bookings + their payments
+    const savedBookings = [];
+    for (const b of insertedBookings) {
+      const paymentsToInsert = b._paymentsToInsert;
+      const bookingRef = b._bookingRef;
+      delete b._paymentsToInsert;
+      delete b._bookingRef;
 
-    // ---------- PAYMENTS ----------
+      const saved = await Booking.insertMany([b]);
+      const savedBooking = saved[0];
 
-    const payments = [];
-
-    for (let i = 0; i < insertedBookings.length; i++) {
-      const b = insertedBookings[i];
-      const def = bookingDefs[i];
-      const guest = guests[def.guest];
-
-      const payAt = (offset) => {
-        const d = new Date(b.bookingDate);
-        d.setDate(d.getDate() - offset);
-        return d;
-      };
-
-      // Completed / checked_in / cancelled / no_show / confirmed / rescheduled → have down payment
-      if (['completed', 'checked_in', 'confirmed', 'rescheduled', 'no_show', 'cancelled'].includes(def.status)) {
-        payments.push({
-          booking: b._id,
-          user: guest._id,
-          type: 'down_payment',
-          amount: b.pricing.downPayment,
-          method: i % 3 === 0 ? 'cash' : 'gcash',
-          referenceNo: `DP-${b.bookingRef}`,
-          status: 'verified',
+      for (const p of paymentsToInsert) {
+        await Payment.create({
+          booking: savedBooking._id,
+          user: savedBooking.user,
+          type: p.type,
+          amount: p.amount,
+          method: p.method,
+          referenceNo: `${p.type === 'down_payment' ? 'DP' : 'BAL'}-${bookingRef}`,
+          status: p.status,
           verifiedBy: staff[0]._id,
-          verifiedAt: payAt(5),
-          createdAt: payAt(5),
-          updatedAt: payAt(5),
+          verifiedAt: p.verifiedAt,
+          createdAt: p.submittedAt,
+          updatedAt: p.verifiedAt,
         });
       }
 
-      // Completed → also balance verified
-      if (def.status === 'completed') {
-        payments.push({
-          booking: b._id,
-          user: guest._id,
-          type: 'balance',
-          amount: b.pricing.balanceDue,
-          method: i % 3 === 0 ? 'cash' : 'gcash',
-          referenceNo: `BAL-${b.bookingRef}`,
-          status: 'verified',
-          verifiedBy: staff[0]._id,
-          verifiedAt: payAt(1),
-          createdAt: payAt(1),
-          updatedAt: payAt(1),
-        });
-        b.paymentStatus = 'paid';
-      } else if (['checked_in', 'confirmed', 'rescheduled', 'no_show', 'cancelled'].includes(def.status)) {
-        b.paymentStatus = 'partial';
+      if (
+        savedBooking.status === 'cancelled' &&
+        savedBooking.paymentStatus === 'refunded'
+      ) {
+        const totalVerified = paymentsToInsert.reduce(
+          (sum, p) => sum + p.amount,
+          0
+        );
+        if (totalVerified > 0) {
+          await Payment.create({
+            booking: savedBooking._id,
+            user: savedBooking.user,
+            type: 'refund',
+            amount: totalVerified,
+            method: paymentsToInsert[0].method,
+            referenceNo: `REF-${bookingRef}`,
+            status: 'verified',
+            verifiedBy: staff[0]._id,
+            verifiedAt: new Date(),
+          });
+        }
       }
 
-      // Pending bookings → submit a pending payment (unverified)
-      if (def.status === 'pending') {
-        payments.push({
-          booking: b._id,
-          user: guest._id,
-          type: 'down_payment',
-          amount: b.pricing.downPayment,
-          method: 'gcash',
-          referenceNo: `DP-${b.bookingRef}`,
-          status: 'pending',
-          createdAt: payAt(3),
-          updatedAt: payAt(3),
-        });
-        b.paymentStatus = 'partial';
-      }
-
-      await b.save();
+      savedBookings.push(savedBooking);
     }
 
-    // Two rejected payments — add extra payments for two completed bookings
-    const rejectedTargets = [insertedBookings[0], insertedBookings[1]];
-    for (const b of rejectedTargets) {
-      payments.push({
-        booking: b._id,
-        user: b.user,
-        type: 'balance',
-        amount: 100,
-        method: 'gcash',
-        referenceNo: `FAKE-${b.bookingRef}`,
-        status: 'rejected',
-        verifiedBy: staff[0]._id,
-        verifiedAt: new Date(),
-        rejectionReason: 'Reference number does not match our records',
-      });
-    }
-
-    await Payment.insertMany(payments);
-    console.log(`Inserted ${payments.length} payments`);
+    console.log(`Inserted ${savedBookings.length} bookings`);
 
     // ---------- ARCHIVES ----------
 
-    // Archive 2 past completed bookings
-    const toArchive = [insertedBookings[2], insertedBookings[3]];
+    const toArchive = [savedBookings[2], savedBookings[3]];
     for (const b of toArchive) {
       await Archive.create({
         originalModel: 'bookings',
@@ -403,7 +487,6 @@ const seed = async () => {
       await b.save();
     }
 
-    // Archive 1 guest
     const guestToArchive = guests[guests.length - 1]; // Buknoy
     await Archive.create({
       originalModel: 'users',
@@ -421,18 +504,18 @@ const seed = async () => {
     // ---------- AUDIT LOGS ----------
 
     const logs = [
-      { action: 'confirm_booking',       details: 'Confirmed multiple bookings during seed',       targetModel: 'bookings' },
-      { action: 'verify_payment',        details: 'Verified down and balance payments during seed', targetModel: 'payments' },
-      { action: 'reject_payment',        details: 'Rejected fake reference payments',               targetModel: 'payments' },
-      { action: 'archive_record',        details: 'Archived 2 past bookings and 1 user',            targetModel: 'bookings' },
-      { action: 'approve_cancel',        details: 'Approved 2 cancellations',                        targetModel: 'bookings' },
-      { action: 'approve_reschedule',    details: 'Approved 2 reschedules',                          targetModel: 'bookings' },
-      { action: 'mark_no_show',          details: 'Marked 1 no-show booking',                        targetModel: 'bookings' },
-      { action: 'record_cash_payment',   details: 'Recorded cash payments',                          targetModel: 'payments' },
-      { action: 'create_user',           details: 'Seeded 13 users',                                 targetModel: 'users' },
-      { action: 'create_package',        details: 'Seeded 6 packages',                               targetModel: 'packages' },
-      { action: 'create_booking',        details: 'Seeded 25 bookings',                              targetModel: 'bookings' },
-      { action: 'update_user',           details: 'Updated guest info',                              targetModel: 'users' },
+      { action: 'confirm_booking',     details: 'Auto-confirmed multiple bookings after payment verification', targetModel: 'bookings' },
+      { action: 'verify_payment',      details: 'Verified multiple down and balance payments during setup',    targetModel: 'payments' },
+      { action: 'reject_payment',      details: 'Rejected fake reference payments',                            targetModel: 'payments' },
+      { action: 'archive_record',      details: 'Archived 2 past bookings and 1 user',                         targetModel: 'bookings' },
+      { action: 'approve_cancel',      details: 'Approved 4 cancellations',                                    targetModel: 'bookings' },
+      { action: 'issue_refund',        details: 'Issued refunds to 3 cancelled bookings with payments',        targetModel: 'payments' },
+      { action: 'approve_reschedule',  details: 'Approved 1 reschedule',                                       targetModel: 'bookings' },
+      { action: 'record_cash_payment', details: 'Recorded cash balance payments',                              targetModel: 'payments' },
+      { action: 'create_user',         details: 'Added 13 users',                                              targetModel: 'users' },
+      { action: 'create_package',      details: 'Added 6 packages',                                            targetModel: 'packages' },
+      { action: 'create_booking',      details: 'Added 25 bookings',                                           targetModel: 'bookings' },
+      { action: 'update_user',         details: 'Updated guest contact info',                                  targetModel: 'users' },
     ];
 
     await AuditLog.insertMany(
@@ -448,18 +531,28 @@ const seed = async () => {
 
     console.log(`Inserted ${logs.length} audit log entries`);
 
+    // ---------- Report ----------
+
+    const counts = {
+      users: await User.countDocuments(),
+      packages: await Package.countDocuments(),
+      bookings: await Booking.countDocuments(),
+      payments: await Payment.countDocuments(),
+      archives: await Archive.countDocuments(),
+      auditlogs: await AuditLog.countDocuments(),
+    };
+
     console.log('\n--- SEED COMPLETE ---');
-    console.log(`Users:      13`);
-    console.log(`Packages:   6`);
-    console.log(`Bookings:   ${insertedBookings.length}`);
-    console.log(`Payments:   ${payments.length}`);
-    console.log(`Archives:   3`);
-    console.log(`Audit logs: ${logs.length}`);
+    console.log(`Users:      ${counts.users}`);
+    console.log(`Packages:   ${counts.packages}`);
+    console.log(`Bookings:   ${counts.bookings}`);
+    console.log(`Payments:   ${counts.payments}`);
+    console.log(`Archives:   ${counts.archives}`);
+    console.log(`Audit logs: ${counts.auditlogs}`);
     console.log('\nDemo login credentials:');
     console.log('Admin  → admin.bali@yopmail.com  / admin00');
     console.log('Staff  → staff1.bali@yopmail.com / staff00');
     console.log('Guest  → guest1.bali@yopmail.com / guest00');
-    console.log('\nReset token for Claire (guest1): demo-reset-token-123');
 
     await mongoose.disconnect();
     process.exit(0);

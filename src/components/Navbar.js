@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Button, Space } from 'antd';
 import {
   HomeOutlined,
@@ -34,12 +34,14 @@ const navLinkStyle = {
 };
 
 const Navbar = () => {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    // Clear the session synchronously, then hard-reload to /login.
+    // This bypasses any React state race and lands on a fresh login page.
+    sessionStorage.removeItem('token');
+    sessionStorage.removeItem('user');
+    window.location.href = '/login';
   };
 
   return (
@@ -55,7 +57,6 @@ const Navbar = () => {
         gap: 20,
       }}
     >
-      {/* Logo */}
       <Link
         to="/"
         style={{
@@ -70,21 +71,17 @@ const Navbar = () => {
         BALI ROYALE<span style={{ color: C.gold }}>.</span>
       </Link>
 
-      {/* Middle links */}
       <Space size={24} wrap style={{ justifyContent: 'center' }}>
-        {/* Home - always visible */}
         <Link to="/" style={navLinkStyle}>
           <HomeOutlined /> Home
         </Link>
 
-        {/* Packages - visible to public and guests only */}
         {(!user || user.role === 'guest') && (
           <Link to="/packages" style={navLinkStyle}>
             <AppstoreOutlined /> Packages
           </Link>
         )}
 
-        {/* Guest links */}
         {user && user.role === 'guest' && (
           <>
             <Link to="/guest" style={navLinkStyle}>
@@ -96,7 +93,6 @@ const Navbar = () => {
           </>
         )}
 
-        {/* Staff links */}
         {user && user.role === 'staff' && (
           <>
             <Link to="/staff" style={navLinkStyle}>
@@ -114,7 +110,6 @@ const Navbar = () => {
           </>
         )}
 
-        {/* Admin links */}
         {user && user.role === 'admin' && (
           <>
             <Link to="/admin" style={navLinkStyle}>
@@ -142,7 +137,6 @@ const Navbar = () => {
         )}
       </Space>
 
-      {/* Right side */}
       <Space size={12} wrap>
         {user ? (
           <>

@@ -5,7 +5,6 @@ import {
   Button,
   Select,
   Card,
-  Spin,
   Alert,
   Row,
   Col,
@@ -15,7 +14,6 @@ import {
   Input,
 } from 'antd';
 import {
-  CheckCircleOutlined,
   UserOutlined,
   CalendarOutlined,
   DollarOutlined,
@@ -24,6 +22,7 @@ import {
   HomeOutlined,
   ExclamationCircleOutlined,
   ClockCircleOutlined,
+  CheckCircleOutlined,
 } from '@ant-design/icons';
 import api from '../../api/axios';
 
@@ -105,7 +104,6 @@ const CountdownInline = ({ booking }) => {
 
 const StaffBookings = () => {
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [filter, setFilter] = useState('all');
@@ -120,8 +118,7 @@ const StaffBookings = () => {
       .then((res) => setBookings(res.data))
       .catch((err) =>
         setError(err.response?.data?.error || 'Failed to load bookings')
-      )
-      .finally(() => setLoading(false));
+      );
   };
 
   useEffect(() => {
@@ -248,16 +245,7 @@ const StaffBookings = () => {
           />
         )}
 
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <Spin size="large" />
-            <p style={{ color: C.gray, marginTop: 12 }}>
-              Retrieving reservations...
-            </p>
-          </div>
-        )}
-
-        {!loading && filtered.length === 0 && (
+        {filtered.length === 0 && (
           <div
             style={{
               background: 'rgba(250, 250, 248, 0.5)',
@@ -274,267 +262,252 @@ const StaffBookings = () => {
         )}
 
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          {!loading &&
-            filtered.map((b) => {
-              const statusCfg = statusConfigs[b.status] || {
-                color: '#333333',
-                bg: '#C4BBAF20',
-                label: b.status,
-              };
+          {filtered.map((b) => {
+            const statusCfg = statusConfigs[b.status] || {
+              color: '#333333',
+              bg: '#C4BBAF20',
+              label: b.status,
+            };
 
-              return (
-                <Card
-                  key={b._id}
-                  bordered={false}
+            return (
+              <Card
+                key={b._id}
+                bordered={false}
+                style={{
+                  background: 'rgba(250, 250, 248, 0.75)',
+                  backdropFilter: 'blur(16px)',
+                  WebkitBackdropFilter: 'blur(16px)',
+                  borderRadius: '16px',
+                  border: `1px solid ${C.border}`,
+                  boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
+                  color: '#333333',
+                }}
+                bodyStyle={{ padding: '24px' }}
+              >
+                <div
                   style={{
-                    background: 'rgba(250, 250, 248, 0.75)',
-                    backdropFilter: 'blur(16px)',
-                    WebkitBackdropFilter: 'blur(16px)',
-                    borderRadius: '16px',
-                    border: `1px solid ${C.border}`,
-                    boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
-                    color: '#333333',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: `1px solid ${C.border}`,
+                    paddingBottom: '12px',
+                    marginBottom: '16px',
+                    flexWrap: 'wrap',
+                    gap: 8,
                   }}
-                  bodyStyle={{ padding: '24px' }}
                 >
-                  <div
+                  <span
                     style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      borderBottom: `1px solid ${C.border}`,
-                      paddingBottom: '12px',
-                      marginBottom: '16px',
-                      flexWrap: 'wrap',
-                      gap: 8,
+                      fontFamily: 'Georgia, serif',
+                      fontWeight: '700',
+                      fontSize: '1.25rem',
+                      letterSpacing: '0.05em',
+                      color: C.green,
                     }}
                   >
-                    <span
+                    #{b.bookingRef}
+                  </span>
+                  <Tag
+                    style={{
+                      color: statusCfg.color,
+                      backgroundColor: statusCfg.bg,
+                      borderColor: statusCfg.color,
+                      borderRadius: '12px',
+                      padding: '2px 10px',
+                      textTransform: 'uppercase',
+                      fontWeight: 600,
+                    }}
+                  >
+                    {statusCfg.label}
+                  </Tag>
+                </div>
+
+                <Row gutter={[24, 16]} style={{ marginBottom: '20px' }}>
+                  <Col xs={24} sm={12} md={6}>
+                    <div
                       style={{
-                        fontFamily: 'Georgia, serif',
-                        fontWeight: '700',
-                        fontSize: '1.25rem',
-                        letterSpacing: '0.05em',
-                        color: C.green,
-                      }}
-                    >
-                      #{b.bookingRef}
-                    </span>
-                    <Tag
-                      style={{
-                        color: statusCfg.color,
-                        backgroundColor: statusCfg.bg,
-                        borderColor: statusCfg.color,
-                        borderRadius: '12px',
-                        padding: '2px 10px',
+                        color: C.brown,
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
+                        marginBottom: 4,
                         fontWeight: 600,
                       }}
                     >
-                      {statusCfg.label}
-                    </Tag>
-                  </div>
+                      <UserOutlined /> Guest
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#333333' }}>
+                      {b.user?.firstName} {b.user?.lastName}
+                    </div>
+                    <div style={{ color: C.gray, fontSize: '0.85rem' }}>
+                      {b.user?.email}
+                    </div>
+                  </Col>
 
-                  <Row gutter={[24, 16]} style={{ marginBottom: '20px' }}>
-                    <Col xs={24} sm={12} md={6}>
-                      <div
-                        style={{
-                          color: C.brown,
-                          fontSize: '0.75rem',
-                          textTransform: 'uppercase',
-                          marginBottom: 4,
-                          fontWeight: 600,
-                        }}
-                      >
-                        <UserOutlined /> Guest
-                      </div>
-                      <div style={{ fontWeight: 600, color: '#333333' }}>
-                        {b.user?.firstName} {b.user?.lastName}
-                      </div>
-                      <div style={{ color: C.gray, fontSize: '0.85rem' }}>
-                        {b.user?.email}
-                      </div>
-                    </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <div
+                      style={{
+                        color: C.brown,
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                        marginBottom: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <HomeOutlined /> Package
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#333333' }}>
+                      {b.package?.name}
+                    </div>
+                    <div style={{ color: C.gray, fontSize: '0.85rem' }}>
+                      {b.guestCount} Guest(s)
+                    </div>
+                  </Col>
 
-                    <Col xs={24} sm={12} md={6}>
-                      <div
-                        style={{
-                          color: C.brown,
-                          fontSize: '0.75rem',
-                          textTransform: 'uppercase',
-                          marginBottom: 4,
-                          fontWeight: 600,
-                        }}
-                      >
-                        <HomeOutlined /> Package
-                      </div>
-                      <div style={{ fontWeight: 600, color: '#333333' }}>
-                        {b.package?.name}
-                      </div>
-                      <div style={{ color: C.gray, fontSize: '0.85rem' }}>
-                        {b.guestCount} Guest(s)
-                      </div>
-                    </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <div
+                      style={{
+                        color: C.brown,
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                        marginBottom: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <CalendarOutlined /> Schedule
+                    </div>
+                    <div style={{ fontWeight: 600, color: '#333333' }}>
+                      {new Date(b.bookingDate).toDateString()}
+                    </div>
+                    <div style={{ color: C.gray, fontSize: '0.85rem' }}>
+                      {b.startTime} – {b.endTime}
+                    </div>
+                  </Col>
 
-                    <Col xs={24} sm={12} md={6}>
-                      <div
-                        style={{
-                          color: C.brown,
-                          fontSize: '0.75rem',
-                          textTransform: 'uppercase',
-                          marginBottom: 4,
-                          fontWeight: 600,
-                        }}
-                      >
-                        <CalendarOutlined /> Schedule
-                      </div>
-                      <div style={{ fontWeight: 600, color: '#333333' }}>
-                        {new Date(b.bookingDate).toDateString()}
-                      </div>
-                      <div style={{ color: C.gray, fontSize: '0.85rem' }}>
-                        {b.startTime} – {b.endTime}
-                      </div>
-                    </Col>
+                  <Col xs={24} sm={12} md={6}>
+                    <div
+                      style={{
+                        color: C.brown,
+                        fontSize: '0.75rem',
+                        textTransform: 'uppercase',
+                        marginBottom: 4,
+                        fontWeight: 600,
+                      }}
+                    >
+                      <DollarOutlined /> Payment & Deposit
+                    </div>
+                    <div style={{ fontWeight: 700, color: C.green }}>
+                      ₱{b.pricing?.totalAmount?.toLocaleString()}
+                    </div>
+                    <div
+                      style={{
+                        color: C.gray,
+                        fontSize: '0.85rem',
+                        textTransform: 'capitalize',
+                      }}
+                    >
+                      Pay: {b.paymentStatus} | Dep: {b.depositStatus}
+                    </div>
+                  </Col>
+                </Row>
 
-                    <Col xs={24} sm={12} md={6}>
-                      <div
-                        style={{
-                          color: C.brown,
-                          fontSize: '0.75rem',
-                          textTransform: 'uppercase',
-                          marginBottom: 4,
-                          fontWeight: 600,
-                        }}
-                      >
-                        <DollarOutlined /> Payment & Deposit
-                      </div>
-                      <div style={{ fontWeight: 700, color: C.green }}>
-                        ₱{b.pricing?.totalAmount?.toLocaleString()}
-                      </div>
-                      <div
-                        style={{
-                          color: C.gray,
-                          fontSize: '0.85rem',
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        Pay: {b.paymentStatus} | Dep: {b.depositStatus}
-                      </div>
-                    </Col>
-                  </Row>
+                <CountdownInline booking={b} />
 
-                  <CountdownInline booking={b} />
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    gap: '8px',
+                    paddingTop: '16px',
+                    marginTop: 12,
+                    borderTop: `1px solid ${C.border}`,
+                  }}
+                >
+                  <Link to={`/staff/bookings/${b._id}`}>
+                    <Button
+                      type="default"
+                      icon={<EyeOutlined />}
+                      style={{
+                        borderColor: C.brown,
+                        color: C.gray,
+                        background: C.white,
+                      }}
+                    >
+                      View
+                    </Button>
+                  </Link>
 
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: '8px',
-                      paddingTop: '16px',
-                      marginTop: 12,
-                      borderTop: `1px solid ${C.border}`,
-                    }}
-                  >
-                    <Link to={`/staff/bookings/${b._id}`}>
-                      <Button
-                        type="default"
-                        icon={<EyeOutlined />}
-                        style={{
-                          borderColor: C.brown,
-                          color: C.gray,
-                          background: C.white,
-                        }}
-                      >
-                        View
-                      </Button>
-                    </Link>
-
-                    {b.status === 'pending' && (
+                  {b.status === 'confirmed' && (
+                    <>
                       <Button
                         type="primary"
                         icon={<CheckCircleOutlined />}
                         style={{
-                          background: C.medium,
-                          borderColor: C.medium,
+                          background: C.green,
+                          borderColor: C.green,
                         }}
-                        onClick={() => act(b._id, 'confirm')}
+                        onClick={() => act(b._id, 'checkin')}
                       >
-                        Confirm
+                        Check In
                       </Button>
-                    )}
+                      <Button
+                        style={{
+                          background: C.white,
+                          borderColor: C.brown,
+                          color: C.brown,
+                        }}
+                        icon={<StopOutlined />}
+                        onClick={() => act(b._id, 'noshow')}
+                      >
+                        No Show
+                      </Button>
+                    </>
+                  )}
 
-                    {b.status === 'confirmed' && (
-                      <>
-                        <Button
-                          type="primary"
-                          style={{
-                            background: C.green,
-                            borderColor: C.green,
-                          }}
-                          onClick={() => act(b._id, 'checkin')}
-                        >
-                          Check In
-                        </Button>
-                        <Button
-                          style={{
-                            background: C.white,
-                            borderColor: C.brown,
-                            color: C.brown,
-                          }}
-                          icon={<StopOutlined />}
-                          onClick={() => act(b._id, 'noshow')}
-                        >
-                          No Show
-                        </Button>
-                      </>
-                    )}
+                  {b.status === 'checked_in' && (
+                    <Button
+                      type="primary"
+                      style={{
+                        background: C.medium,
+                        borderColor: C.medium,
+                      }}
+                      onClick={() => act(b._id, 'complete')}
+                    >
+                      Complete
+                    </Button>
+                  )}
 
-                    {b.status === 'checked_in' && (
+                  {b.status === 'completed' && b.depositStatus === 'held' && (
+                    <>
                       <Button
                         type="primary"
                         style={{
-                          background: C.medium,
-                          borderColor: C.medium,
+                          background: C.green,
+                          borderColor: C.green,
                         }}
-                        onClick={() => act(b._id, 'complete')}
+                        onClick={() => act(b._id, 'deposit-return')}
                       >
-                        Complete
+                        Return Deposit
                       </Button>
-                    )}
-
-                    {b.status === 'completed' &&
-                      b.depositStatus === 'held' && (
-                        <>
-                          <Button
-                            type="primary"
-                            style={{
-                              background: C.green,
-                              borderColor: C.green,
-                            }}
-                            onClick={() => act(b._id, 'deposit-return')}
-                          >
-                            Return Deposit
-                          </Button>
-                          <Button
-                            style={{
-                              background: C.gray,
-                              borderColor: C.gray,
-                              color: C.white,
-                            }}
-                            icon={<ExclamationCircleOutlined />}
-                            onClick={() => {
-                              setSelectedBookingId(b._id);
-                              setDeductModalOpen(true);
-                            }}
-                          >
-                            Deduct Deposit
-                          </Button>
-                        </>
-                      )}
-                  </div>
-                </Card>
-              );
-            })}
+                      <Button
+                        style={{
+                          background: C.gray,
+                          borderColor: C.gray,
+                          color: C.white,
+                        }}
+                        icon={<ExclamationCircleOutlined />}
+                        onClick={() => {
+                          setSelectedBookingId(b._id);
+                          setDeductModalOpen(true);
+                        }}
+                      >
+                        Deduct Deposit
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </Space>
       </div>
 

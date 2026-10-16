@@ -11,7 +11,6 @@ import {
   Modal,
   Form,
   Tag,
-  Spin,
   Avatar,
 } from 'antd';
 import {
@@ -52,7 +51,6 @@ const roleOptions = [
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -62,8 +60,9 @@ const AdminUsers = () => {
   const loadUsers = () => {
     api.get('/getUsers')
       .then((res) => setUsers(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load users'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load users')
+      );
   };
 
   useEffect(() => {
@@ -128,7 +127,6 @@ const AdminUsers = () => {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <p
             style={{
@@ -159,10 +157,22 @@ const AdminUsers = () => {
         </div>
 
         {message && (
-          <Alert message={message} type="success" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={message}
+            type="success"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
         {error && (
-          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
 
         <Card
@@ -214,122 +224,116 @@ const AdminUsers = () => {
             </Button>
           </div>
 
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Spin size="large" />
-            </div>
-          )}
+          {users.map((u) => (
+            <Card
+              key={u._id}
+              bordered={false}
+              style={{
+                background: C.white,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                marginBottom: 14,
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <Row gutter={[16, 16]} align="middle">
+                <Col flex="60px">
+                  <Avatar
+                    size={46}
+                    style={{
+                      background: C.pink,
+                      color: C.green,
+                      fontWeight: 700,
+                    }}
+                  >
+                    {u.firstName?.charAt(0)}
+                    {u.lastName?.charAt(0)}
+                  </Avatar>
+                </Col>
 
-          {!loading &&
-            users.map((u) => (
-              <Card
-                key={u._id}
-                bordered={false}
-                style={{
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 12,
-                  marginBottom: 14,
-                }}
-                bodyStyle={{ padding: 20 }}
-              >
-                <Row gutter={[16, 16]} align="middle">
-                  <Col flex="60px">
-                    <Avatar
-                      size={46}
+                <Col flex="auto" style={{ minWidth: 0 }}>
+                  <h3
+                    style={{
+                      color: C.green,
+                      fontSize: 16,
+                      margin: '0 0 4px',
+                    }}
+                  >
+                    {u.firstName} {u.lastName}
+                  </h3>
+                  <p
+                    style={{
+                      color: C.brown,
+                      margin: 0,
+                      fontSize: 13,
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {u.email}
+                  </p>
+                </Col>
+
+                <Col>
+                  <Space wrap>
+                    <Tag
                       style={{
-                        background: C.pink,
-                        color: C.green,
-                        fontWeight: 700,
+                        background: C.cream,
+                        color: C.medium,
+                        border: 'none',
+                        fontWeight: 600,
+                        textTransform: 'capitalize',
                       }}
                     >
-                      {u.firstName?.charAt(0)}
-                      {u.lastName?.charAt(0)}
-                    </Avatar>
-                  </Col>
-
-                  <Col flex="auto" style={{ minWidth: 0 }}>
-                    <h3
+                      {u.role}
+                    </Tag>
+                    <Tag
                       style={{
-                        color: C.green,
-                        fontSize: 16,
-                        margin: '0 0 4px',
+                        background:
+                          u.status === 'active' ? '#E8EFE5' : C.pink,
+                        color:
+                          u.status === 'active' ? C.green : '#A13E3E',
+                        border: 'none',
+                        textTransform: 'capitalize',
                       }}
                     >
-                      {u.firstName} {u.lastName}
-                    </h3>
-                    <p
-                      style={{
-                        color: C.brown,
-                        margin: 0,
-                        fontSize: 13,
-                        overflowWrap: 'anywhere',
-                      }}
+                      {u.status}
+                    </Tag>
+                    {u.isArchived && <Tag color="default">Archived</Tag>}
+                  </Space>
+                </Col>
+
+                <Col>
+                  <Space>
+                    <Button
+                      icon={<EditOutlined />}
+                      onClick={() => setEditUser(u)}
+                      style={{ borderColor: C.border }}
                     >
-                      {u.email}
-                    </p>
-                  </Col>
-
-                  <Col>
-                    <Space wrap>
-                      <Tag
-                        style={{
-                          background: C.cream,
-                          color: C.medium,
-                          border: 'none',
-                          fontWeight: 600,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {u.role}
-                      </Tag>
-                      <Tag
-                        style={{
-                          background: u.status === 'active' ? '#E8EFE5' : C.pink,
-                          color: u.status === 'active' ? C.green : '#A13E3E',
-                          border: 'none',
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {u.status}
-                      </Tag>
-                      {u.isArchived && (
-                        <Tag color="default">Archived</Tag>
-                      )}
-                    </Space>
-                  </Col>
-
-                  <Col>
-                    <Space>
-                      <Button
-                        icon={<EditOutlined />}
-                        onClick={() => setEditUser(u)}
-                        style={{ borderColor: C.border }}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        icon={<DeleteOutlined />}
-                        danger
-                        onClick={() => deactivate(u._id)}
-                      >
-                        Deactivate
-                      </Button>
-                    </Space>
-                  </Col>
-                </Row>
-              </Card>
-            ))}
+                      Edit
+                    </Button>
+                    <Button
+                      icon={<DeleteOutlined />}
+                      danger
+                      onClick={() => deactivate(u._id)}
+                    >
+                      Deactivate
+                    </Button>
+                  </Space>
+                </Col>
+              </Row>
+            </Card>
+          ))}
         </Card>
 
-        {/* Create Modal */}
         <Modal
           title="Create New User"
           open={showCreate}
           onOk={handleCreate}
           onCancel={() => setShowCreate(false)}
           okText="Create"
-          okButtonProps={{ style: { background: C.green, borderColor: C.green } }}
+          okButtonProps={{
+            style: { background: C.green, borderColor: C.green },
+          }}
         >
           <Form layout="vertical">
             <Row gutter={12}>
@@ -338,7 +342,10 @@ const AdminUsers = () => {
                   <Input
                     value={createForm.firstName}
                     onChange={(e) =>
-                      setCreateForm({ ...createForm, firstName: e.target.value })
+                      setCreateForm({
+                        ...createForm,
+                        firstName: e.target.value,
+                      })
                     }
                     prefix={<UserOutlined style={{ color: C.brown }} />}
                   />
@@ -349,7 +356,10 @@ const AdminUsers = () => {
                   <Input
                     value={createForm.lastName}
                     onChange={(e) =>
-                      setCreateForm({ ...createForm, lastName: e.target.value })
+                      setCreateForm({
+                        ...createForm,
+                        lastName: e.target.value,
+                      })
                     }
                     prefix={<UserOutlined style={{ color: C.brown }} />}
                   />
@@ -411,14 +421,15 @@ const AdminUsers = () => {
           </Form>
         </Modal>
 
-        {/* Edit Modal */}
         <Modal
           title="Edit User"
           open={!!editUser}
           onOk={handleUpdate}
           onCancel={() => setEditUser(null)}
           okText="Save"
-          okButtonProps={{ style: { background: C.green, borderColor: C.green } }}
+          okButtonProps={{
+            style: { background: C.green, borderColor: C.green },
+          }}
         >
           {editUser && (
             <Form layout="vertical">
@@ -428,7 +439,10 @@ const AdminUsers = () => {
                     <Input
                       value={editUser.firstName}
                       onChange={(e) =>
-                        setEditUser({ ...editUser, firstName: e.target.value })
+                        setEditUser({
+                          ...editUser,
+                          firstName: e.target.value,
+                        })
                       }
                     />
                   </Form.Item>
@@ -438,7 +452,10 @@ const AdminUsers = () => {
                     <Input
                       value={editUser.lastName}
                       onChange={(e) =>
-                        setEditUser({ ...editUser, lastName: e.target.value })
+                        setEditUser({
+                          ...editUser,
+                          lastName: e.target.value,
+                        })
                       }
                     />
                   </Form.Item>

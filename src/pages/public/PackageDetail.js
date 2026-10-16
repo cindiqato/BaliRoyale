@@ -7,9 +7,9 @@ import {
   Col,
   Divider,
   Space,
-  Spin,
   Alert,
   Tag,
+  message,
 } from 'antd';
 import {
   ArrowLeftOutlined,
@@ -39,41 +39,38 @@ export default function PackageDetail() {
   const { user } = useAuth();
 
   const [pkg, setPkg] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get(`/packages/${id}`)
       .then((res) => setPkg(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load package'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load package')
+      );
   }, [id]);
 
   const handleBookNow = () => {
     if (!user) {
       navigate('/login');
     } else if (user.role !== 'guest') {
-      alert('Only guests can book packages.');
+      message.error('Only guests can book packages.');
     } else {
       navigate(`/guest/book?packageId=${pkg._id}`);
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px' }}>
-        <Spin size="large" />
-        <p style={{ marginTop: '16px', color: C.gray }}>
-          Loading package details...
-        </p>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-        <Alert message="Error" description={error} type="error" showIcon />
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: C.cream,
+          padding: '40px 20px',
+        }}
+      >
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Alert message="Error" description={error} type="error" showIcon />
+        </div>
       </div>
     );
   }
@@ -93,12 +90,12 @@ export default function PackageDetail() {
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
         <p>
           <Link to="/packages" style={{ color: C.medium, fontWeight: 500 }}>
-            <ArrowLeftOutlined style={{ marginRight: '6px' }} /> Back to Packages
+            <ArrowLeftOutlined style={{ marginRight: '6px' }} /> Back to
+            Packages
           </Link>
         </p>
 
         <Row gutter={[32, 32]} style={{ marginTop: '16px' }}>
-          {/* Left: image */}
           <Col xs={24} md={14}>
             <img
               src={sampleImage}
@@ -113,7 +110,6 @@ export default function PackageDetail() {
             />
           </Col>
 
-          {/* Right: details */}
           <Col xs={24} md={10}>
             <Title
               level={2}
@@ -165,19 +161,28 @@ export default function PackageDetail() {
             <Title level={5} style={{ color: C.green }}>
               Package Information
             </Title>
-            <Space direction="vertical" style={{ marginBottom: '24px', width: '100%' }}>
+            <Space
+              direction="vertical"
+              style={{ marginBottom: '24px', width: '100%' }}
+            >
               <Text>
-                <CalendarOutlined style={{ color: C.medium, marginRight: 6 }} />
+                <CalendarOutlined
+                  style={{ color: C.medium, marginRight: 6 }}
+                />
                 <strong>Time:</strong> {pkg.startTime} – {pkg.endTime}
                 {pkg.dayType && pkg.dayType !== 'Any' && ` (${pkg.dayType})`}
               </Text>
               <Text>
-                <CheckCircleOutlined style={{ color: C.medium, marginRight: 6 }} />
+                <CheckCircleOutlined
+                  style={{ color: C.medium, marginRight: 6 }}
+                />
                 <strong>Capacity:</strong> {pkg.includedPax} Included Pax (Max:{' '}
                 {pkg.maxPax} Pax)
               </Text>
               <Text>
-                <CheckCircleOutlined style={{ color: C.medium, marginRight: 6 }} />
+                <CheckCircleOutlined
+                  style={{ color: C.medium, marginRight: 6 }}
+                />
                 <strong>Excess Rate:</strong> ₱
                 {pkg.excessPaxRate?.toLocaleString()} per head
               </Text>

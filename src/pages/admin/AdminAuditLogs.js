@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Alert, Tag, Space, Spin } from 'antd';
+import { Card, Alert, Tag, Space } from 'antd';
 import { FileTextOutlined } from '@ant-design/icons';
 import api from '../../api/axios';
 
@@ -17,14 +17,14 @@ const C = {
 
 const AdminAuditLogs = () => {
   const [logs, setLogs] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/auditlogs')
       .then((res) => setLogs(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load logs'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load logs')
+      );
   }, []);
 
   return (
@@ -38,7 +38,6 @@ const AdminAuditLogs = () => {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <p
             style={{
@@ -69,7 +68,13 @@ const AdminAuditLogs = () => {
         </div>
 
         {error && (
-          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
 
         <Card
@@ -126,13 +131,7 @@ const AdminAuditLogs = () => {
             </Tag>
           </div>
 
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Spin size="large" />
-            </div>
-          )}
-
-          {!loading && logs.length === 0 && (
+          {logs.length === 0 && (
             <div style={{ textAlign: 'center', padding: 40 }}>
               <FileTextOutlined style={{ fontSize: 38, color: C.medium }} />
               <h3 style={{ color: C.green, marginTop: 14 }}>
@@ -142,104 +141,105 @@ const AdminAuditLogs = () => {
             </div>
           )}
 
-          {!loading &&
-            logs.map((l) => (
-              <Card
-                key={l._id}
-                bordered={false}
-                style={{
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 12,
-                  marginBottom: 14,
-                }}
-                bodyStyle={{ padding: 20 }}
+          {logs.map((l) => (
+            <Card
+              key={l._id}
+              bordered={false}
+              style={{
+                background: C.white,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                marginBottom: 14,
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <div
+                style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}
               >
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 16 }}>
-                  <div
-                    style={{
-                      width: 46,
-                      height: 46,
-                      background: C.pink,
-                      color: C.green,
-                      borderRadius: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 22,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FileTextOutlined />
-                  </div>
+                <div
+                  style={{
+                    width: 46,
+                    height: 46,
+                    background: C.pink,
+                    color: C.green,
+                    borderRadius: 10,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 22,
+                    flexShrink: 0,
+                  }}
+                >
+                  <FileTextOutlined />
+                </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <Space wrap align="center" style={{ marginBottom: 10 }}>
-                      <h3
-                        style={{
-                          color: C.green,
-                          fontSize: 16,
-                          fontWeight: 700,
-                          margin: 0,
-                          fontFamily: 'Georgia, serif',
-                          overflowWrap: 'anywhere',
-                        }}
-                      >
-                        {l.action}
-                      </h3>
-                      <Tag
-                        style={{
-                          background: C.cream,
-                          color: C.medium,
-                          border: 'none',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {l.targetModel || 'N/A'}
-                      </Tag>
-                    </Space>
-
-                    <p
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Space wrap align="center" style={{ marginBottom: 10 }}>
+                    <h3
                       style={{
-                        color: C.brown,
-                        margin: '0 0 12px',
-                        fontSize: 14,
-                        lineHeight: 1.6,
+                        color: C.green,
+                        fontSize: 16,
+                        fontWeight: 700,
+                        margin: 0,
+                        fontFamily: 'Georgia, serif',
                         overflowWrap: 'anywhere',
                       }}
                     >
-                      {l.details}
-                    </p>
-
-                    <div
+                      {l.action}
+                    </h3>
+                    <Tag
                       style={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                        flexWrap: 'wrap',
-                        gap: 10,
-                        paddingTop: 12,
-                        borderTop: `1px solid ${C.pink}`,
+                        background: C.cream,
+                        color: C.medium,
+                        border: 'none',
+                        fontWeight: 600,
                       }}
                     >
-                      <span
-                        style={{
-                          color: C.brown,
-                          fontSize: 12,
-                          fontWeight: 600,
-                        }}
-                      >
-                        By {l.actor?.firstName} {l.actor?.lastName} (
-                        {l.actor?.role})
-                      </span>
-                      <span style={{ color: C.gray, fontSize: 12 }}>
-                        {new Date(l.createdAt).toLocaleString()}
-                      </span>
-                    </div>
+                      {l.targetModel || 'N/A'}
+                    </Tag>
+                  </Space>
+
+                  <p
+                    style={{
+                      color: C.brown,
+                      margin: '0 0 12px',
+                      fontSize: 14,
+                      lineHeight: 1.6,
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    {l.details}
+                  </p>
+
+                  <div
+                    style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      flexWrap: 'wrap',
+                      gap: 10,
+                      paddingTop: 12,
+                      borderTop: `1px solid ${C.pink}`,
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: C.brown,
+                        fontSize: 12,
+                        fontWeight: 600,
+                      }}
+                    >
+                      By {l.actor?.firstName} {l.actor?.lastName} (
+                      {l.actor?.role})
+                    </span>
+                    <span style={{ color: C.gray, fontSize: 12 }}>
+                      {new Date(l.createdAt).toLocaleString()}
+                    </span>
                   </div>
                 </div>
-              </Card>
-            ))}
+              </div>
+            </Card>
+          ))}
         </Card>
       </div>
     </div>

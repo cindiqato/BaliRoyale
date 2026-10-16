@@ -235,9 +235,10 @@ const forgotPassword = async (req, res) => {
 
     const user = await UserModel.findOne({ email });
 
+    // Always respond with success to avoid leaking which emails exist
     if (!user) {
       return res.json({
-        message: 'If the email exists, a reset link has been sent',
+        message: 'A reset link has been sent. Check your email inbox.',
       });
     }
 
@@ -265,8 +266,7 @@ const forgotPassword = async (req, res) => {
     });
 
     res.json({
-      message: 'If the email exists, a reset link has been sent',
-      resetToken: token,
+      message: 'A reset link has been sent. Check your email inbox.',
     });
   } catch (err) {
     console.log(err);

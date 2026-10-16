@@ -20,30 +20,55 @@ const C = {
   white: '#FAFAF8',
   gray: '#6E5A48',
   brown: '#8A7A68',
-  border: '#E2DCD5',
+  border: '#C4BBAF',
+  pink: '#F2DCD5',
 };
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/dashboard/admin')
       .then((res) => setStats(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load dashboard'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load dashboard')
+      );
   }, []);
 
   const statistics = stats
     ? [
-        { label: 'Total Users', value: stats.totalUsers, icon: <TeamOutlined style={{ color: C.green }} /> },
-        { label: 'Guests', value: stats.totalGuests, icon: <UserOutlined style={{ color: C.green }} /> },
-        { label: 'Staff', value: stats.totalStaff, icon: <IdcardOutlined style={{ color: C.green }} /> },
-        { label: 'Packages', value: stats.totalPackages, icon: <AppstoreOutlined style={{ color: C.green }} /> },
-        { label: 'Bookings', value: stats.totalBookings, icon: <CalendarOutlined style={{ color: C.green }} /> },
-        { label: 'Archived Records', value: stats.totalArchived, icon: <FileTextOutlined style={{ color: C.green }} /> },
+        {
+          label: 'Total Users',
+          value: stats.totalUsers,
+          icon: <TeamOutlined style={{ color: C.green }} />,
+        },
+        {
+          label: 'Guests',
+          value: stats.totalGuests,
+          icon: <UserOutlined style={{ color: C.green }} />,
+        },
+        {
+          label: 'Staff',
+          value: stats.totalStaff,
+          icon: <IdcardOutlined style={{ color: C.green }} />,
+        },
+        {
+          label: 'Packages',
+          value: stats.totalPackages,
+          icon: <AppstoreOutlined style={{ color: C.green }} />,
+        },
+        {
+          label: 'Bookings',
+          value: stats.totalBookings,
+          icon: <CalendarOutlined style={{ color: C.green }} />,
+        },
+        {
+          label: 'Archived Records',
+          value: stats.totalArchived,
+          icon: <FileTextOutlined style={{ color: C.green }} />,
+        },
       ]
     : [];
 
@@ -65,7 +90,6 @@ const AdminDashboard = () => {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <p
             style={{
@@ -90,20 +114,23 @@ const AdminDashboard = () => {
           >
             Welcome, {user?.firstName}!
           </h1>
-          <p style={{ color: C.gray, margin: 0 }}>Admin overview of the system.</p>
+          <p style={{ color: C.gray, margin: 0 }}>
+            Admin overview of the system.
+          </p>
         </div>
 
         {error && (
-          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 24 }} />
-        )}
-
-        {loading && (
-          <p style={{ textAlign: 'center', color: C.gray, padding: 30 }}>Loading...</p>
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            style={{ marginBottom: 24 }}
+          />
         )}
 
         {stats && (
           <>
-            {/* Statistics */}
             <Row gutter={[18, 18]} style={{ marginBottom: 32 }}>
               {statistics.map((item) => (
                 <Col xs={24} sm={12} md={8} key={item.label}>
@@ -138,7 +165,6 @@ const AdminDashboard = () => {
               ))}
             </Row>
 
-            {/* Quick actions */}
             <Card
               bordered={false}
               style={{
@@ -172,7 +198,10 @@ const AdminDashboard = () => {
                         style={{
                           background: index === 0 ? C.green : C.cream,
                           color: index === 0 ? '#FAFAF8' : C.green,
-                          border: index === 0 ? `1px solid ${C.green}` : `1px solid ${C.border}`,
+                          border:
+                            index === 0
+                              ? `1px solid ${C.green}`
+                              : `1px solid ${C.border}`,
                           borderRadius: 10,
                           padding: 20,
                           fontSize: 14,
@@ -183,7 +212,9 @@ const AdminDashboard = () => {
                         }}
                       >
                         <span>{item.label}</span>
-                        <span style={{ fontSize: 20, fontWeight: 400 }}>↗</span>
+                        <span style={{ fontSize: 20, fontWeight: 400 }}>
+                          ↗
+                        </span>
                       </div>
                     </Link>
                   </Col>

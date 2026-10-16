@@ -7,14 +7,20 @@ export const AuthProvider = ({ children }) => {
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Restore from sessionStorage on mount (cleared when tab/browser closes)
+  // Restore session on mount (sessionStorage survives page refresh but not tab close)
   useEffect(() => {
     const savedToken = sessionStorage.getItem('token');
     const savedUser = sessionStorage.getItem('user');
 
     if (savedToken && savedUser) {
-      setToken(savedToken);
-      setUser(JSON.parse(savedUser));
+      try {
+        setToken(savedToken);
+        setUser(JSON.parse(savedUser));
+      } catch (err) {
+        // Corrupted data — clear it
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);

@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Row, Col, Button, Typography, Spin, Empty, Alert, Tag } from 'antd';
+import { Card, Row, Col, Button, Typography, Empty, Alert } from 'antd';
 import {
   EyeOutlined,
   CalendarOutlined,
   UserOutlined,
-  HomeOutlined,
 } from '@ant-design/icons';
 import api from '../../api/axios';
 import sampleImage from '../../assets/sample.png';
@@ -24,29 +23,28 @@ const C = {
 
 export default function Packages() {
   const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/packages')
       .then((res) => setPackages(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load packages'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load packages')
+      );
   }, []);
-
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px' }}>
-        <Spin size="large" />
-        <p style={{ marginTop: '16px', color: C.gray }}>Loading packages...</p>
-      </div>
-    );
-  }
 
   if (error) {
     return (
-      <div style={{ maxWidth: '600px', margin: '40px auto', padding: '0 20px' }}>
-        <Alert message="Error" description={error} type="error" showIcon />
+      <div
+        style={{
+          minHeight: '100vh',
+          backgroundColor: C.cream,
+          padding: '40px 20px',
+        }}
+      >
+        <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+          <Alert message="Error" description={error} type="error" showIcon />
+        </div>
       </div>
     );
   }
@@ -62,7 +60,6 @@ export default function Packages() {
       }}
     >
       <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '0 16px' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <p
             style={{
@@ -92,7 +89,6 @@ export default function Packages() {
           </Paragraph>
         </div>
 
-        {/* Empty State */}
         {packages.length === 0 ? (
           <Card
             style={{
@@ -181,7 +177,9 @@ export default function Packages() {
                     >
                       <CalendarOutlined style={{ color: C.medium }} />
                       <strong>Schedule:</strong> {pkg.startTime} – {pkg.endTime}
-                      {pkg.dayType && pkg.dayType !== 'Any' && ` (${pkg.dayType})`}
+                      {pkg.dayType &&
+                        pkg.dayType !== 'Any' &&
+                        ` (${pkg.dayType})`}
                     </div>
 
                     <div

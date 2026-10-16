@@ -12,7 +12,6 @@ import {
   Alert,
   Space,
   Tag,
-  Spin,
 } from 'antd';
 import {
   PlusOutlined,
@@ -54,7 +53,6 @@ const emptyForm = {
 
 const AdminPackages = () => {
   const [packages, setPackages] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
   const [showCreate, setShowCreate] = useState(false);
@@ -64,8 +62,9 @@ const AdminPackages = () => {
   const loadPackages = () => {
     api.get('/packages')
       .then((res) => setPackages(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load packages'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load packages')
+      );
   };
 
   useEffect(() => {
@@ -276,7 +275,6 @@ const AdminPackages = () => {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <p
             style={{
@@ -307,10 +305,22 @@ const AdminPackages = () => {
         </div>
 
         {message && (
-          <Alert message={message} type="success" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={message}
+            type="success"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
         {error && (
-          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
 
         <Card
@@ -365,13 +375,7 @@ const AdminPackages = () => {
             </Button>
           </div>
 
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Spin size="large" />
-            </div>
-          )}
-
-          {!loading && packages.length === 0 && (
+          {packages.length === 0 && (
             <div style={{ textAlign: 'center', padding: 40 }}>
               <AppstoreOutlined style={{ fontSize: 38, color: C.medium }} />
               <p style={{ color: C.gray, marginTop: 12 }}>
@@ -404,11 +408,23 @@ const AdminPackages = () => {
                   >
                     {p.name}
                   </h3>
-                  <p style={{ color: C.gray, margin: '0 0 6px', fontSize: 13 }}>
+                  <p
+                    style={{
+                      color: C.gray,
+                      margin: '0 0 6px',
+                      fontSize: 13,
+                    }}
+                  >
                     {p.description}
                   </p>
                   <Space wrap size={12}>
-                    <Tag style={{ background: C.cream, color: C.medium, border: 'none' }}>
+                    <Tag
+                      style={{
+                        background: C.cream,
+                        color: C.medium,
+                        border: 'none',
+                      }}
+                    >
                       ₱{p.baseRate?.toLocaleString()}
                     </Tag>
                     <span style={{ fontSize: 12, color: C.brown }}>
@@ -448,31 +464,35 @@ const AdminPackages = () => {
           ))}
         </Card>
 
-        {/* Create Modal */}
         <Modal
           title="Create New Package"
           open={showCreate}
           onOk={handleCreate}
           onCancel={() => setShowCreate(false)}
           okText="Create"
-          okButtonProps={{ style: { background: C.green, borderColor: C.green } }}
+          okButtonProps={{
+            style: { background: C.green, borderColor: C.green },
+          }}
           width={640}
         >
           <Form layout="vertical">{renderFormFields(form, setForm)}</Form>
         </Modal>
 
-        {/* Edit Modal */}
         <Modal
           title="Edit Package"
           open={!!editPkg}
           onOk={handleUpdate}
           onCancel={() => setEditPkg(null)}
           okText="Save"
-          okButtonProps={{ style: { background: C.green, borderColor: C.green } }}
+          okButtonProps={{
+            style: { background: C.green, borderColor: C.green },
+          }}
           width={640}
         >
           {editPkg && (
-            <Form layout="vertical">{renderFormFields(editPkg, setEditPkg)}</Form>
+            <Form layout="vertical">
+              {renderFormFields(editPkg, setEditPkg)}
+            </Form>
           )}
         </Modal>
       </div>

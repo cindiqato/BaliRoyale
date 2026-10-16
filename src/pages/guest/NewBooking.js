@@ -8,7 +8,6 @@ import {
   Button,
   Typography,
   Alert,
-  Spin,
   Descriptions,
 } from 'antd';
 import {
@@ -57,9 +56,7 @@ export default function NewBooking() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
-  const [loading, setLoading] = useState(true);
 
-  // Load packages, then apply preselectedId if valid
   useEffect(() => {
     api.get('/packages')
       .then((res) => {
@@ -83,8 +80,7 @@ export default function NewBooking() {
       })
       .catch((err) =>
         setError(err.response?.data?.error || 'Failed to load packages')
-      )
-      .finally(() => setLoading(false));
+      );
   }, [preselectedId]);
 
   useEffect(() => {
@@ -131,6 +127,8 @@ export default function NewBooking() {
   };
 
   const pricing = calculatePricing();
+  const guestCountValid =
+    selectedPkg && Number(form.guestCount) <= selectedPkg.maxPax;
 
   const checkAvailability = async () => {
     setAvailability(null);
@@ -180,11 +178,9 @@ export default function NewBooking() {
         specialRequests: form.specialRequests,
       });
 
-      // Redirect straight to Upload Payment with a success message
       const bookingId = res.data.booking._id;
       navigate(`/guest/payments/${bookingId}?new=1`);
     } catch (err) {
-      // Handle 409 (slot held by another guest) with a clear message
       if (err.response?.status === 409) {
         setError(
           err.response.data.error ||
@@ -198,17 +194,6 @@ export default function NewBooking() {
     }
   };
 
-  if (loading) {
-    return (
-      <div style={{ textAlign: 'center', padding: '60px' }}>
-        <Spin size="large" />
-        <p style={{ marginTop: '16px', color: C.gray }}>
-          Loading booking portal...
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div
       style={{
@@ -219,7 +204,9 @@ export default function NewBooking() {
         padding: '40px 20px',
       }}
     >
-      <div style={{ maxWidth: '700px', margin: '24px auto', padding: '0 16px' }}>
+      <div
+        style={{ maxWidth: '700px', margin: '24px auto', padding: '0 16px' }}
+      >
         <p>
           <Link to="/guest" style={{ color: C.medium, fontWeight: 500 }}>
             <ArrowLeftOutlined style={{ marginRight: '6px' }} /> Back to
@@ -239,7 +226,6 @@ export default function NewBooking() {
             border: `1px solid ${C.border}`,
           }}
         >
-          {/* Hold Notice */}
           <Alert
             message={
               <span>
@@ -277,7 +263,6 @@ export default function NewBooking() {
           )}
 
           <form onSubmit={handleSubmit}>
-            {/* Package Selection */}
             <div style={{ marginBottom: '16px' }}>
               <label>
                 <Text strong style={{ color: '#333' }}>
@@ -299,7 +284,6 @@ export default function NewBooking() {
               </Select>
             </div>
 
-            {/* Booking Date */}
             <div style={{ marginBottom: '16px' }}>
               <label>
                 <Text strong style={{ color: '#333' }}>
@@ -316,7 +300,6 @@ export default function NewBooking() {
               />
             </div>
 
-            {/* Guest Count */}
             <div style={{ marginBottom: '16px' }}>
               <label>
                 <Text strong style={{ color: '#333' }}>
@@ -326,15 +309,20 @@ export default function NewBooking() {
               <Input
                 type="number"
                 min="1"
+                max={selectedPkg?.maxPax || undefined}
                 value={form.guestCount}
                 onChange={(e) => handleChange('guestCount', e.target.value)}
                 required
                 size="large"
                 style={{ width: '100%', marginTop: '6px' }}
               />
+              {selectedPkg && !guestCountValid && (
+                <Text style={{ color: '#A13E3E', fontSize: 12 }}>
+                  Guest count exceeds package maximum of {selectedPkg.maxPax}.
+                </Text>
+              )}
             </div>
 
-            {/* Package Quick Info */}
             {selectedPkg && (
               <div
                 style={{
@@ -365,7 +353,6 @@ export default function NewBooking() {
               </div>
             )}
 
-            {/* Special Requests */}
             <div style={{ marginBottom: '20px' }}>
               <label>
                 <Text strong style={{ color: '#333' }}>
@@ -383,7 +370,6 @@ export default function NewBooking() {
               />
             </div>
 
-            {/* Availability Check */}
             {selectedPkg && form.bookingDate && (
               <div
                 style={{
@@ -415,8 +401,7 @@ export default function NewBooking() {
               </div>
             )}
 
-            {/* Pricing Preview */}
-            {pricing && (
+            {pricing && guestCountValid && (
               <div
                 style={{
                   background: C.cream,
@@ -469,7 +454,7 @@ export default function NewBooking() {
               htmlType="submit"
               size="large"
               block
-              disabled={submitting || !selectedPkg}
+              disabled={submitting || !selectedPkg || !guestCountValid}
               loading={submitting}
               style={{
                 background: C.green,

@@ -1,6 +1,7 @@
 const BookingModel = require('../models/Booking');
 const PackageModel = require('../models/Package');
 const UserModel = require('../models/User');
+const PaymentModel = require('../models/Payment');
 const { logAction } = require('./auditLogController');
 const sendBookingEmail = require('../middleware/mailer');
 
@@ -11,8 +12,6 @@ const generateBookingRef = () => {
   return 'BR-' + Date.now().toString().slice(-6) + '-' + random;
 };
 
-// Cancels any pending bookings whose 15-min hold has expired.
-// Called before availability checks and before creating new bookings.
 const sweepExpiredHolds = async () => {
   const now = new Date();
   const expired = await BookingModel.find({
@@ -38,7 +37,6 @@ const sweepExpiredHolds = async () => {
 
 const createBooking = async (req, res) => {
   try {
-    // Free any expired holds so the slot is truly free
     await sweepExpiredHolds();
 
     const {
@@ -142,7 +140,6 @@ const createBooking = async (req, res) => {
 
 const checkAvailability = async (req, res) => {
   try {
-    // Sweep first so expired holds don't block the slot
     await sweepExpiredHolds();
 
     const { packageId, bookingDate, startTime } = req.body;
@@ -261,6 +258,20 @@ const confirmBooking = async (req, res) => {
       details: `Confirmed booking ${booking.bookingRef}`,
     });
 
+    const verifiedPayments = await PaymentModel.find({
+      booking: booking._id,
+      status: 'verified',
+      type: { $ne: 'refund' },
+    });
+    const amountPaid = verifiedPayments.reduce(
+      (sum, p) => sum + p.amount,
+      0
+    );
+    const remainingBalance = Math.max(
+      0,
+      (booking.pricing.totalAmount || 0) - amountPaid
+    );
+
     const guest = await UserModel.findById(booking.user);
     if (guest) {
       await sendBookingEmail({
@@ -275,7 +286,9 @@ const confirmBooking = async (req, res) => {
             <li><strong>Date:</strong> ${new Date(booking.bookingDate).toDateString()}</li>
             <li><strong>Time:</strong> ${booking.startTime} – ${booking.endTime}</li>
             <li><strong>Guests:</strong> ${booking.guestCount}</li>
-            <li><strong>Total Amount:</strong> PHP ${booking.pricing.totalAmount}</li>
+            <li><strong>Total Amount:</strong> PHP ${booking.pricing.totalAmount.toLocaleString()}</li>
+            <li><strong>Amount Paid:</strong> PHP ${amountPaid.toLocaleString()}</li>
+            <li><strong>Remaining Balance:</strong> PHP ${remainingBalance.toLocaleString()}</li>
           </ul>
           <p>We look forward to hosting you!</p>
           <p>— Bali Royale</p>
@@ -330,13 +343,35 @@ const completeBooking = async (req, res) => {
       return res.status(400).json({ error: 'Only checked-in bookings can be completed' });
     }
 
+    // Block completion if there's still a balance due
+    const verifiedPayments = await PaymentModel.find({
+      booking: booking._id,
+      status: 'verified',
+      type: { $ne: 'refund' },
+    });
+    const totalPaid = verifiedPayments.reduce((sum, p) => sum + p.amount, 0);
+    const remainingBalance = Math.max(
+      0,
+      (booking.pricing.totalAmount || 0) - totalPaid
+    );
+
+    if (remainingBalance > 0) {
+      return res.status(400).json({
+        error: `This booking still has a remaining balance of ₱${remainingBalance.toLocaleString()}. Settle the full amount before completing the booking.`,
+        remainingBalance,
+        totalAmount: booking.pricing.totalAmount,
+        amountPaid: totalPaid,
+      });
+    }
+
     booking.isSlotBlocked = false;
     booking.isActiveConfirmed = false;
     booking.status = 'completed';
+    booking.paymentStatus = 'paid';
     booking.statusHistory.push({
       status: 'completed',
       changedBy: req.user.id,
-      remarks: 'Booking completed',
+      remarks: 'Booking completed. Full payment settled.',
     });
 
     await booking.save();
@@ -419,15 +454,56 @@ const approveCancel = async (req, res) => {
       return res.status(400).json({ error: 'No pending cancellation request' });
     }
 
+    const verifiedPayments = await PaymentModel.find({
+      booking: booking._id,
+      status: 'verified',
+      type: { $ne: 'refund' },
+    });
+
+    const refundAmount = verifiedPayments.reduce(
+      (sum, p) => sum + p.amount,
+      0
+    );
+
+    let refundRecord = null;
+    if (refundAmount > 0) {
+      const originalMethod = verifiedPayments[0]?.method || 'gcash';
+
+      refundRecord = new PaymentModel({
+        booking: booking._id,
+        user: booking.user,
+        type: 'refund',
+        amount: refundAmount,
+        method: originalMethod,
+        referenceNo: `REF-${booking.bookingRef}`,
+        status: 'verified',
+        verifiedBy: req.user.id,
+        verifiedAt: new Date(),
+      });
+
+      await refundRecord.save();
+
+      booking.paymentStatus = 'refunded';
+    }
+
     booking.cancelStatus = 'approved';
     booking.isSlotBlocked = false;
     booking.isActiveConfirmed = false;
     booking.status = 'cancelled';
+
     booking.statusHistory.push({
       status: 'cancelled',
       changedBy: req.user.id,
       remarks: 'Cancellation approved',
     });
+
+    if (refundAmount > 0) {
+      booking.statusHistory.push({
+        status: 'refund_issued',
+        changedBy: req.user.id,
+        remarks: `Refunded ₱${refundAmount.toLocaleString()} (${verifiedPayments.length} payment${verifiedPayments.length > 1 ? 's' : ''})`,
+      });
+    }
 
     await booking.save();
 
@@ -436,11 +512,38 @@ const approveCancel = async (req, res) => {
       action: 'approve_cancel',
       targetModel: 'bookings',
       targetId: booking._id,
-      details: `Approved cancellation for ${booking.bookingRef}`,
+      details: `Approved cancellation for ${booking.bookingRef}${
+        refundAmount > 0 ? ` (refund ₱${refundAmount})` : ''
+      }`,
     });
+
+    if (refundAmount > 0) {
+      await logAction({
+        actor: req.user.id,
+        action: 'issue_refund',
+        targetModel: 'payments',
+        targetId: refundRecord._id,
+        details: `Issued refund of ₱${refundAmount} for ${booking.bookingRef}`,
+      });
+    }
 
     const guest = await UserModel.findById(booking.user);
     if (guest) {
+      const refundBlock =
+        refundAmount > 0
+          ? `
+            <hr />
+            <h3>Refund Issued</h3>
+            <p>Your verified payment(s) have been refunded to your original payment method.</p>
+            <ul>
+              <li><strong>Refund Amount:</strong> PHP ${refundAmount.toLocaleString()}</li>
+              <li><strong>Refund Method:</strong> ${refundRecord.method}</li>
+              <li><strong>Refund Reference:</strong> ${refundRecord.referenceNo}</li>
+            </ul>
+            <p>Please allow a few business days for the refund to reflect on your account.</p>
+          `
+          : '';
+
       await sendBookingEmail({
         to: guest.email,
         subject: `Booking Cancelled — ${booking.bookingRef}`,
@@ -448,13 +551,14 @@ const approveCancel = async (req, res) => {
           <h2>Your booking has been cancelled</h2>
           <p>Hi ${guest.firstName},</p>
           <p>Your reservation <strong>${booking.bookingRef}</strong> on ${new Date(booking.bookingDate).toDateString()} has been cancelled.</p>
+          ${refundBlock}
           <p>If you have questions, please contact the resort directly.</p>
           <p>— Bali Royale</p>
         `,
       });
     }
 
-    res.json({ message: 'Cancellation approved', booking });
+    res.json({ message: 'Cancellation approved', booking, refund: refundRecord });
   } catch (err) {
     console.log(err);
     res.status(500).json({ error: 'Internal Server Error' });
@@ -488,10 +592,10 @@ const rejectCancel = async (req, res) => {
 
 const requestReschedule = async (req, res) => {
   try {
-    const { newDate, newStartTime, newEndTime, reason } = req.body;
+    const { newDate, reason } = req.body;
 
-    if (!newDate || !newStartTime || !newEndTime) {
-      return res.status(400).json({ error: 'New date and time required' });
+    if (!newDate) {
+      return res.status(400).json({ error: 'New date is required' });
     }
 
     const booking = await BookingModel.findById(req.params.id);
@@ -511,14 +615,14 @@ const requestReschedule = async (req, res) => {
 
     booking.rescheduleRequested = true;
     booking.newDate = newDate;
-    booking.newStartTime = newStartTime;
-    booking.newEndTime = newEndTime;
+    booking.newStartTime = booking.startTime;
+    booking.newEndTime = booking.endTime;
     booking.rescheduleReason = reason || 'No reason provided';
     booking.rescheduleStatus = 'pending';
     booking.statusHistory.push({
       status: 'reschedule_requested',
       changedBy: req.user.id,
-      remarks: `Requested ${newDate} ${newStartTime}-${newEndTime}`,
+      remarks: `Requested new date: ${newDate}`,
     });
 
     await booking.save();

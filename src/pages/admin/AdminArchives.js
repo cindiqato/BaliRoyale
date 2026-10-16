@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Card, Button, Alert, Tag, Space, Spin } from 'antd';
+import { Card, Button, Alert, Tag, Space } from 'antd';
 import { FileTextOutlined, UndoOutlined } from '@ant-design/icons';
 import api from '../../api/axios';
 
@@ -17,15 +17,15 @@ const C = {
 
 const AdminArchives = () => {
   const [archives, setArchives] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
   const loadArchives = () => {
     api.get('/archives')
       .then((res) => setArchives(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load archives'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load archives')
+      );
   };
 
   useEffect(() => {
@@ -56,7 +56,6 @@ const AdminArchives = () => {
       }}
     >
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <p
             style={{
@@ -87,10 +86,22 @@ const AdminArchives = () => {
         </div>
 
         {message && (
-          <Alert message={message} type="success" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={message}
+            type="success"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
         {error && (
-          <Alert message={error} type="error" showIcon closable style={{ marginBottom: 16 }} />
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            closable
+            style={{ marginBottom: 16 }}
+          />
         )}
 
         <Card
@@ -147,13 +158,7 @@ const AdminArchives = () => {
             </Tag>
           </div>
 
-          {loading && (
-            <div style={{ textAlign: 'center', padding: 40 }}>
-              <Spin size="large" />
-            </div>
-          )}
-
-          {!loading && archives.length === 0 && (
+          {archives.length === 0 && (
             <div style={{ textAlign: 'center', padding: 40 }}>
               <FileTextOutlined style={{ fontSize: 38, color: C.medium }} />
               <h3 style={{ color: C.green, marginTop: 14 }}>
@@ -163,130 +168,129 @@ const AdminArchives = () => {
             </div>
           )}
 
-          {!loading &&
-            archives.map((a) => (
-              <Card
-                key={a._id}
-                bordered={false}
+          {archives.map((a) => (
+            <Card
+              key={a._id}
+              bordered={false}
+              style={{
+                background: C.white,
+                border: `1px solid ${C.border}`,
+                borderRadius: 12,
+                marginBottom: 14,
+              }}
+              bodyStyle={{ padding: 20 }}
+            >
+              <div
                 style={{
-                  background: C.white,
-                  border: `1px solid ${C.border}`,
-                  borderRadius: 12,
-                  marginBottom: 14,
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: 16,
+                  flexWrap: 'wrap',
                 }}
-                bodyStyle={{ padding: 20 }}
               >
                 <div
                   style={{
+                    background: C.pink,
+                    color: C.green,
+                    padding: 14,
+                    borderRadius: 10,
                     display: 'flex',
-                    alignItems: 'flex-start',
-                    gap: 16,
-                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: 22,
+                    flexShrink: 0,
                   }}
                 >
-                  <div
-                    style={{
-                      background: C.pink,
-                      color: C.green,
-                      padding: 14,
-                      borderRadius: 10,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 22,
-                      flexShrink: 0,
-                    }}
-                  >
-                    <FileTextOutlined />
-                  </div>
+                  <FileTextOutlined />
+                </div>
 
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <Space wrap align="center" style={{ marginBottom: 8 }}>
-                      <h3
-                        style={{
-                          color: C.green,
-                          fontSize: 16,
-                          fontWeight: 700,
-                          margin: 0,
-                          fontFamily: 'Georgia, serif',
-                          overflowWrap: 'anywhere',
-                        }}
-                      >
-                        {a.snapshot?.bookingRef ||
-                          a.snapshot?.email ||
-                          a.snapshot?.name ||
-                          a.originalId}
-                      </h3>
-                      <Tag
-                        style={{
-                          background: C.cream,
-                          color: C.medium,
-                          border: 'none',
-                          fontWeight: 600,
-                          textTransform: 'capitalize',
-                        }}
-                      >
-                        {a.originalModel}
-                      </Tag>
-                    </Space>
-
-                    <p
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <Space wrap align="center" style={{ marginBottom: 8 }}>
+                    <h3
                       style={{
-                        color: C.brown,
-                        margin: '0 0 4px',
-                        fontSize: 13,
+                        color: C.green,
+                        fontSize: 16,
+                        fontWeight: 700,
+                        margin: 0,
+                        fontFamily: 'Georgia, serif',
                         overflowWrap: 'anywhere',
                       }}
                     >
-                      <strong>Reason:</strong> {a.reason || 'N/A'}
-                    </p>
-                    <p
+                      {a.snapshot?.bookingRef ||
+                        a.snapshot?.email ||
+                        a.snapshot?.name ||
+                        a.originalId}
+                    </h3>
+                    <Tag
                       style={{
-                        color: C.brown,
-                        margin: '0 0 4px',
-                        fontSize: 13,
-                      }}
-                    >
-                      <strong>Archived by:</strong> {a.archivedBy?.firstName}{' '}
-                      {a.archivedBy?.lastName}
-                    </p>
-                    <p style={{ color: C.gray, margin: 0, fontSize: 12 }}>
-                      Archived on: {new Date(a.createdAt).toLocaleString()}
-                    </p>
-
-                    {a.isRestored && (
-                      <Tag
-                        style={{
-                          background: C.pink,
-                          color: C.green,
-                          border: 'none',
-                          fontWeight: 600,
-                          marginTop: 8,
-                        }}
-                      >
-                        RESTORED
-                      </Tag>
-                    )}
-                  </div>
-
-                  {!a.isRestored && (
-                    <Button
-                      icon={<UndoOutlined />}
-                      onClick={() => restore(a._id)}
-                      style={{
-                        background: C.medium,
-                        borderColor: C.medium,
-                        color: C.white,
+                        background: C.cream,
+                        color: C.medium,
+                        border: 'none',
                         fontWeight: 600,
-                        borderRadius: 8,
+                        textTransform: 'capitalize',
                       }}
                     >
-                      Restore
-                    </Button>
+                      {a.originalModel}
+                    </Tag>
+                  </Space>
+
+                  <p
+                    style={{
+                      color: C.brown,
+                      margin: '0 0 4px',
+                      fontSize: 13,
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    <strong>Reason:</strong> {a.reason || 'N/A'}
+                  </p>
+                  <p
+                    style={{
+                      color: C.brown,
+                      margin: '0 0 4px',
+                      fontSize: 13,
+                    }}
+                  >
+                    <strong>Archived by:</strong> {a.archivedBy?.firstName}{' '}
+                    {a.archivedBy?.lastName}
+                  </p>
+                  <p style={{ color: C.gray, margin: 0, fontSize: 12 }}>
+                    Archived on: {new Date(a.createdAt).toLocaleString()}
+                  </p>
+
+                  {a.isRestored && (
+                    <Tag
+                      style={{
+                        background: C.pink,
+                        color: C.green,
+                        border: 'none',
+                        fontWeight: 600,
+                        marginTop: 8,
+                      }}
+                    >
+                      RESTORED
+                    </Tag>
                   )}
                 </div>
-              </Card>
-            ))}
+
+                {!a.isRestored && (
+                  <Button
+                    icon={<UndoOutlined />}
+                    onClick={() => restore(a._id)}
+                    style={{
+                      background: C.medium,
+                      borderColor: C.medium,
+                      color: C.white,
+                      fontWeight: 600,
+                      borderRadius: 8,
+                    }}
+                  >
+                    Restore
+                  </Button>
+                )}
+              </div>
+            </Card>
+          ))}
         </Card>
       </div>
     </div>

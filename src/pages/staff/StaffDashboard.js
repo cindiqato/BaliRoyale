@@ -1,77 +1,83 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Button, Spin, Alert, Row, Col, Statistic, Space } from 'antd';
-import { 
-  CalendarOutlined, 
-  CreditCardOutlined, 
-  ExclamationCircleOutlined, 
-  SwapOutlined, 
+import { Card, Button, Alert, Row, Col, Statistic, Space } from 'antd';
+import {
+  CalendarOutlined,
+  CreditCardOutlined,
+  ExclamationCircleOutlined,
+  SwapOutlined,
   CheckCircleOutlined,
-  UserOutlined,
-  ArrowRightOutlined
+  ArrowRightOutlined,
 } from '@ant-design/icons';
 import api from '../../api/axios';
 import { useAuth } from '../../context/AuthContext';
 
+const C = {
+  green: '#3A4D39',
+  medium: '#4F6F52',
+  gold: '#C5A46D',
+  cream: '#F4F1EA',
+  white: '#FAFAF8',
+  gray: '#6E5A48',
+  brown: '#8A7A68',
+  border: '#C4BBAF',
+  pink: '#F2DCD5',
+};
+
 const StaffDashboard = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     api.get('/dashboard/staff')
       .then((res) => setStats(res.data))
-      .catch((err) => setError(err.response?.data?.error || 'Failed to load dashboard'))
-      .finally(() => setLoading(false));
+      .catch((err) =>
+        setError(err.response?.data?.error || 'Failed to load dashboard')
+      );
   }, []);
 
   return (
     <div
       style={{
         minHeight: '100vh',
-        backgroundColor: '#F4F1EA',
+        backgroundColor: C.cream,
         color: '#333333',
-        fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+        fontFamily: 'Arial, sans-serif',
         padding: '40px 20px',
       }}
     >
       <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
-        {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '36px' }}>
           <h1
             style={{
-              fontFamily: "'Playfair Display', Georgia, serif",
+              fontFamily: 'Georgia, serif',
               fontSize: '2.5rem',
               fontWeight: '600',
-              color: '#3A4D39',
+              color: C.green,
               letterSpacing: '0.05em',
               margin: '0 0 8px 0',
             }}
           >
             Welcome, {user?.firstName}!
           </h1>
-          <p style={{ color: '#6E5A48', fontSize: '0.95rem', margin: 0 }}>
+          <p style={{ color: C.gray, fontSize: '0.95rem', margin: 0 }}>
             Staff overview of active reservations and pending tasks
           </p>
         </div>
 
-        {/* Feedback Alert */}
         {error && (
-          <Alert message={error} type="error" showIcon style={{ marginBottom: 24 }} closable />
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            style={{ marginBottom: 24 }}
+            closable
+          />
         )}
 
-        {/* Loading State */}
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <Spin size="large" />
-            <p style={{ color: '#6E5A48', marginTop: 12 }}>Loading dashboard statistics...</p>
-          </div>
-        )}
-
-        {!loading && stats && (
+        {stats && (
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
-            {/* Summary Grid */}
             <Row gutter={[20, 20]}>
               <Col xs={24} sm={12} md={8}>
                 <Card
@@ -81,16 +87,24 @@ const StaffDashboard = () => {
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     borderRadius: '16px',
-                    border: '1px solid #E2DCD5',
+                    border: `1px solid ${C.border}`,
                     boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
                   }}
                   bodyStyle={{ padding: '20px' }}
                 >
                   <Statistic
-                    title={<span style={{ color: '#8A7A68', fontWeight: 600 }}>Pending Bookings</span>}
+                    title={
+                      <span style={{ color: C.brown, fontWeight: 600 }}>
+                        Pending Bookings
+                      </span>
+                    }
                     value={stats.pendingBookings}
-                    prefix={<CalendarOutlined style={{ color: '#8A7A68' }} />}
-                    valueStyle={{ color: '#3A4D39', fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}
+                    prefix={<CalendarOutlined style={{ color: C.brown }} />}
+                    valueStyle={{
+                      color: C.green,
+                      fontWeight: 700,
+                      fontFamily: 'Georgia, serif',
+                    }}
                   />
                 </Card>
               </Col>
@@ -103,16 +117,26 @@ const StaffDashboard = () => {
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     borderRadius: '16px',
-                    border: '1px solid #E2DCD5',
+                    border: `1px solid ${C.border}`,
                     boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
                   }}
                   bodyStyle={{ padding: '20px' }}
                 >
                   <Statistic
-                    title={<span style={{ color: '#8A7A68', fontWeight: 600 }}>Confirmed Bookings</span>}
+                    title={
+                      <span style={{ color: C.brown, fontWeight: 600 }}>
+                        Confirmed Bookings
+                      </span>
+                    }
                     value={stats.confirmedBookings}
-                    prefix={<CheckCircleOutlined style={{ color: '#4F6F52' }} />}
-                    valueStyle={{ color: '#4F6F52', fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}
+                    prefix={
+                      <CheckCircleOutlined style={{ color: C.medium }} />
+                    }
+                    valueStyle={{
+                      color: C.medium,
+                      fontWeight: 700,
+                      fontFamily: 'Georgia, serif',
+                    }}
                   />
                 </Card>
               </Col>
@@ -125,16 +149,26 @@ const StaffDashboard = () => {
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     borderRadius: '16px',
-                    border: '1px solid #E2DCD5',
+                    border: `1px solid ${C.border}`,
                     boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
                   }}
                   bodyStyle={{ padding: '20px' }}
                 >
                   <Statistic
-                    title={<span style={{ color: '#8A7A68', fontWeight: 600 }}>Pending Payments</span>}
+                    title={
+                      <span style={{ color: C.brown, fontWeight: 600 }}>
+                        Pending Payments
+                      </span>
+                    }
                     value={stats.pendingPayments}
-                    prefix={<CreditCardOutlined style={{ color: '#8A7A68' }} />}
-                    valueStyle={{ color: '#3A4D39', fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}
+                    prefix={
+                      <CreditCardOutlined style={{ color: C.brown }} />
+                    }
+                    valueStyle={{
+                      color: C.green,
+                      fontWeight: 700,
+                      fontFamily: 'Georgia, serif',
+                    }}
                   />
                 </Card>
               </Col>
@@ -147,16 +181,28 @@ const StaffDashboard = () => {
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     borderRadius: '16px',
-                    border: '1px solid #E2DCD5',
+                    border: `1px solid ${C.border}`,
                     boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
                   }}
                   bodyStyle={{ padding: '20px' }}
                 >
                   <Statistic
-                    title={<span style={{ color: '#8A7A68', fontWeight: 600 }}>Cancel Requests</span>}
+                    title={
+                      <span style={{ color: C.brown, fontWeight: 600 }}>
+                        Cancel Requests
+                      </span>
+                    }
                     value={stats.pendingCancelRequests}
-                    prefix={<ExclamationCircleOutlined style={{ color: '#333333' }} />}
-                    valueStyle={{ color: '#333333', fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}
+                    prefix={
+                      <ExclamationCircleOutlined
+                        style={{ color: '#333333' }}
+                      />
+                    }
+                    valueStyle={{
+                      color: '#333333',
+                      fontWeight: 700,
+                      fontFamily: 'Georgia, serif',
+                    }}
                   />
                 </Card>
               </Col>
@@ -169,22 +215,29 @@ const StaffDashboard = () => {
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     borderRadius: '16px',
-                    border: '1px solid #E2DCD5',
+                    border: `1px solid ${C.border}`,
                     boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
                   }}
                   bodyStyle={{ padding: '20px' }}
                 >
                   <Statistic
-                    title={<span style={{ color: '#8A7A68', fontWeight: 600 }}>Reschedule Requests</span>}
+                    title={
+                      <span style={{ color: C.brown, fontWeight: 600 }}>
+                        Reschedule Requests
+                      </span>
+                    }
                     value={stats.pendingRescheduleRequests}
-                    prefix={<SwapOutlined style={{ color: '#4F6F52' }} />}
-                    valueStyle={{ color: '#4F6F52', fontWeight: 700, fontFamily: "'Playfair Display', Georgia, serif" }}
+                    prefix={<SwapOutlined style={{ color: C.medium }} />}
+                    valueStyle={{
+                      color: C.medium,
+                      fontWeight: 700,
+                      fontFamily: 'Georgia, serif',
+                    }}
                   />
                 </Card>
               </Col>
             </Row>
 
-            {/* Quick Actions Bar */}
             <Card
               bordered={false}
               style={{
@@ -192,7 +245,7 @@ const StaffDashboard = () => {
                 backdropFilter: 'blur(16px)',
                 WebkitBackdropFilter: 'blur(16px)',
                 borderRadius: '16px',
-                border: '1px solid #E2DCD5',
+                border: `1px solid ${C.border}`,
                 boxShadow: '0 8px 24px 0 rgba(58, 77, 57, 0.08)',
                 textAlign: 'center',
               }}
@@ -200,9 +253,9 @@ const StaffDashboard = () => {
             >
               <h3
                 style={{
-                  fontFamily: "'Playfair Display', Georgia, serif",
+                  fontFamily: 'Georgia, serif',
                   fontSize: '1.25rem',
-                  color: '#3A4D39',
+                  color: C.green,
                   marginBottom: '20px',
                 }}
               >
@@ -215,7 +268,7 @@ const StaffDashboard = () => {
                     type="primary"
                     icon={<CalendarOutlined />}
                     size="large"
-                    style={{ background: '#3A4D39', borderColor: '#3A4D39' }}
+                    style={{ background: C.green, borderColor: C.green }}
                   >
                     Manage Bookings
                   </Button>
@@ -226,7 +279,7 @@ const StaffDashboard = () => {
                     type="primary"
                     icon={<CreditCardOutlined />}
                     size="large"
-                    style={{ background: '#4F6F52', borderColor: '#4F6F52' }}
+                    style={{ background: C.medium, borderColor: C.medium }}
                   >
                     Verify Payments
                   </Button>
@@ -236,7 +289,11 @@ const StaffDashboard = () => {
                   <Button
                     size="large"
                     icon={<ArrowRightOutlined />}
-                    style={{ borderColor: '#8A7A68', color: '#6E5A48', background: '#FAFAF8' }}
+                    style={{
+                      borderColor: C.brown,
+                      color: C.gray,
+                      background: C.white,
+                    }}
                   >
                     Handle Requests
                   </Button>

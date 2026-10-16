@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Tag, Button, Card, Spin, Alert, Row, Col, Space, Empty } from 'antd';
+import { Tag, Button, Card, Alert, Row, Col, Space, Empty } from 'antd';
 import {
   PlusOutlined,
   UserOutlined,
@@ -99,7 +99,6 @@ const CountdownRow = ({ booking }) => {
 
 const MyBookings = () => {
   const [bookings, setBookings] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   const loadBookings = () => {
@@ -107,8 +106,7 @@ const MyBookings = () => {
       .then((res) => setBookings(res.data))
       .catch((err) =>
         setError(err.response?.data?.error || 'Failed to load bookings')
-      )
-      .finally(() => setLoading(false));
+      );
   };
 
   useEffect(() => {
@@ -178,16 +176,7 @@ const MyBookings = () => {
           />
         )}
 
-        {loading && (
-          <div style={{ textAlign: 'center', padding: '60px 0' }}>
-            <Spin size="large" />
-            <p style={{ color: C.gray, marginTop: 12 }}>
-              Retrieving your bookings...
-            </p>
-          </div>
-        )}
-
-        {!loading && bookings.length === 0 && (
+        {bookings.length === 0 && !error && (
           <Card
             bordered={false}
             style={{
@@ -227,7 +216,7 @@ const MyBookings = () => {
           </Card>
         )}
 
-        {!loading && bookings.length > 0 && (
+        {bookings.length > 0 && (
           <Space direction="vertical" size="large" style={{ width: '100%' }}>
             {bookings.map((b) => {
               const statusCfg = statusConfigs[b.status] || {
