@@ -77,7 +77,7 @@ const Login = () => {
                 letterSpacing: '0.03em',
               }}
             >
-              Welcome Back
+              Welcome
             </h2>
             <p style={{ color: C.brown, fontSize: '0.9rem', margin: 0 }}>
               Sign in to your Bali Royale account.

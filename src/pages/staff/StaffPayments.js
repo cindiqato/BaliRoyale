@@ -61,8 +61,8 @@ const computeRemainingBalance = (booking, allPayments) => {
 const StaffPayments = () => {
   const [payments, setPayments] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
+  const [pageError, setPageError] = useState('');
+  const [cashMessage, setCashMessage] = useState(null);
 
   const [rejectModalOpen, setRejectModalOpen] = useState(false);
   const [selectedPaymentId, setSelectedPaymentId] = useState(null);
@@ -73,6 +73,13 @@ const StaffPayments = () => {
     amount: '',
   });
 
+  const setWithAutoDismiss = (setter, value) => {
+    setter(value);
+    setTimeout(() => {
+      setter((current) => (current === value ? null : current));
+    }, 4000);
+  };
+
   const loadData = () => {
     Promise.all([api.get('/payments'), api.get('/bookings')])
       .then(([paymentsRes, bookingsRes]) => {
@@ -80,7 +87,7 @@ const StaffPayments = () => {
         setBookings(bookingsRes.data);
       })
       .catch((err) =>
-        setError(err.response?.data?.error || 'Failed to load data')
+        setPageError(err.response?.data?.error || 'Failed to load data')
       );
   };
 
@@ -90,7 +97,6 @@ const StaffPayments = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-fill amount when booking changes
   const handleBookingSelect = (bookingId) => {
     const selected = bookings.find((b) => b._id === bookingId);
     const balance = computeRemainingBalance(selected, payments);
@@ -101,55 +107,58 @@ const StaffPayments = () => {
   };
 
   const verify = async (id) => {
-    setError('');
-    setMessage('');
+    setPageError('');
     try {
       await api.put(`/payments/${id}/verify`);
-      setMessage('Payment verified. Booking auto-confirmed if applicable.');
       loadData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to verify payment');
+      setPageError(err.response?.data?.error || 'Failed to verify payment');
     }
   };
 
   const handleRejectSubmit = async () => {
     if (!rejectReason) return;
-    setError('');
-    setMessage('');
+    setPageError('');
+    const id = selectedPaymentId;
     try {
-      await api.put(`/payments/${selectedPaymentId}/reject`, {
+      await api.put(`/payments/${id}/reject`, {
         reason: rejectReason,
       });
-      setMessage('Payment rejected.');
       setRejectModalOpen(false);
       setRejectReason('');
       loadData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to reject payment');
+      setPageError(err.response?.data?.error || 'Failed to reject payment');
+      setRejectModalOpen(false);
+      setRejectReason('');
     }
   };
 
   const submitCash = async () => {
     if (!cashForm.bookingId || !cashForm.amount) return;
-    setError('');
-    setMessage('');
+    setPageError('');
     try {
       await api.post('/payments/cash', {
         bookingId: cashForm.bookingId,
         type: 'balance',
         amount: Number(cashForm.amount),
       });
-      setMessage('Cash payment recorded successfully.');
+      setWithAutoDismiss(setCashMessage, {
+        type: 'success',
+        text: 'Cash payment recorded successfully.',
+      });
       setCashForm({ bookingId: '', amount: '' });
       loadData();
     } catch (err) {
-      setError(err.response?.data?.error || 'Failed to record cash payment');
+      setWithAutoDismiss(setCashMessage, {
+        type: 'error',
+        text: err.response?.data?.error || 'Failed to record cash payment',
+      });
     }
   };
 
   const pending = payments.filter((p) => p.status === 'pending');
 
-  // Only confirmed or checked-in bookings that still have a balance
   const eligibleBookings = bookings.filter(
     (b) =>
       ['confirmed', 'checked_in'].includes(b.status) &&
@@ -266,22 +275,14 @@ const StaffPayments = () => {
           </p>
         </div>
 
-        {message && (
+        {pageError && (
           <Alert
-            message={message}
-            type="success"
-            showIcon
-            style={{ marginBottom: 20 }}
-            closable
-          />
-        )}
-        {error && (
-          <Alert
-            message={error}
+            message={pageError}
             type="error"
             showIcon
             style={{ marginBottom: 20 }}
             closable
+            onClose={() => setPageError('')}
           />
         )}
 
@@ -467,6 +468,17 @@ const StaffPayments = () => {
             }}
             bodyStyle={{ padding: '24px' }}
           >
+            {cashMessage && (
+              <Alert
+                message={cashMessage.text}
+                type={cashMessage.type}
+                showIcon
+                closable
+                onClose={() => setCashMessage(null)}
+                style={{ marginBottom: 16, borderRadius: 8 }}
+              />
+            )}
+
             <p style={{ color: C.gray, fontSize: 13, marginBottom: 16 }}>
               Cash payments apply only to the remaining balance. Bookings that
               are already fully paid are excluded from the list.
@@ -590,7 +602,10 @@ const StaffPayments = () => {
         title="Reject Payment"
         open={rejectModalOpen}
         onOk={handleRejectSubmit}
-        onCancel={() => setRejectModalOpen(false)}
+        onCancel={() => {
+          setRejectModalOpen(false);
+          setRejectReason('');
+        }}
         okText="Confirm Rejection"
         okButtonProps={{ style: { background: C.gray, borderColor: C.gray } }}
       >

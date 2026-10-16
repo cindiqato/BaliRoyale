@@ -16,6 +16,7 @@ import {
   ArrowLeftOutlined,
   CreditCardOutlined,
   ClockCircleOutlined,
+  InfoCircleOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
@@ -37,6 +38,7 @@ export default function BookingDetail() {
   const { id } = useParams();
 
   const [booking, setBooking] = useState(null);
+  const [payments, setPayments] = useState([]);
   const [error, setError] = useState('');
   const [actionMsg, setActionMsg] = useState('');
   const [actionErr, setActionErr] = useState('');
@@ -53,16 +55,22 @@ export default function BookingDetail() {
 
   const reloadedOnExpiry = useRef(false);
 
-  const loadBooking = () => {
-    api.get(`/bookings/${id}`)
-      .then((res) => setBooking(res.data))
+  const loadData = () => {
+    Promise.all([
+      api.get(`/bookings/${id}`),
+      api.get(`/payments/booking/${id}`),
+    ])
+      .then(([b, p]) => {
+        setBooking(b.data);
+        setPayments(p.data);
+      })
       .catch((err) =>
         setError(err.response?.data?.error || 'Failed to load booking')
       );
   };
 
   useEffect(() => {
-    loadBooking();
+    loadData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
@@ -100,7 +108,7 @@ export default function BookingDetail() {
       !reloadedOnExpiry.current
     ) {
       reloadedOnExpiry.current = true;
-      const timeout = setTimeout(() => loadBooking(), 3000);
+      const timeout = setTimeout(() => loadData(), 3000);
       return () => clearTimeout(timeout);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -123,7 +131,7 @@ export default function BookingDetail() {
       setActionMsg('Cancellation requested.');
       setShowCancel(false);
       setCancelReason('');
-      loadBooking();
+      loadData();
     } catch (err) {
       setActionErr(err.response?.data?.error || 'Failed to request cancel');
     }
@@ -141,7 +149,7 @@ export default function BookingDetail() {
       setActionMsg('Reschedule requested.');
       setShowReschedule(false);
       setRescheduleForm({ newDate: '', reason: '' });
-      loadBooking();
+      loadData();
     } catch (err) {
       setActionErr(
         err.response?.data?.error || 'Failed to request reschedule'
@@ -149,16 +157,22 @@ export default function BookingDetail() {
     }
   };
 
+  const hasPendingPayment = payments.some((p) => p.status === 'pending');
+  const isFullyPaid = booking?.paymentStatus === 'paid';
+
   const canAct =
     booking && ['pending', 'confirmed'].includes(booking.status);
   const isExpired = booking?.status === 'payment_timeout';
   const cancelPending = booking?.cancelRequested;
   const reschedulePending = booking?.rescheduleRequested;
 
+  // Hide Upload Payment if there's a pending payment OR the booking is fully paid
   const canUploadPayment =
     booking &&
     ['pending', 'confirmed', 'checked_in'].includes(booking.status) &&
-    !cancelPending;
+    !cancelPending &&
+    !hasPendingPayment &&
+    !isFullyPaid;
 
   const canRequestCancel =
     canAct && !cancelPending && !reschedulePending;
@@ -246,7 +260,7 @@ export default function BookingDetail() {
               <Space>{renderStatusTag(booking.status)}</Space>
             </div>
 
-            {remaining !== null && (
+            {remaining !== null && !hasPendingPayment && (
               <Alert
                 icon={<ClockCircleOutlined />}
                 message={
@@ -263,6 +277,16 @@ export default function BookingDetail() {
                   border: '1px solid #FFD591',
                   borderRadius: 8,
                 }}
+              />
+            )}
+
+            {hasPendingPayment && !isExpired && (
+              <Alert
+                icon={<InfoCircleOutlined />}
+                message="Payment submitted. Awaiting staff verification."
+                type="info"
+                showIcon
+                style={{ marginBottom: 16, borderRadius: 8 }}
               />
             )}
 
@@ -361,6 +385,17 @@ export default function BookingDetail() {
             <Title level={4} style={{ color: C.green }}>
               Pricing Breakdown
             </Title>
+            <Text
+              style={{
+                display: 'block',
+                color: C.gray,
+                fontSize: 12,
+                fontStyle: 'italic',
+                marginBottom: 12,
+              }}
+            >
+              These are the original calculated amounts at booking time.
+            </Text>
             <Descriptions
               bordered
               column={1}
@@ -392,10 +427,10 @@ export default function BookingDetail() {
                   ₱{booking.pricing?.totalAmount?.toLocaleString()}
                 </Text>
               </Descriptions.Item>
-              <Descriptions.Item label="Down Payment">
+              <Descriptions.Item label="Initial Down Payment">
                 ₱{booking.pricing?.downPayment?.toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label="Balance Due">
+              <Descriptions.Item label="Initial Balance Due">
                 ₱{booking.pricing?.balanceDue?.toLocaleString()}
               </Descriptions.Item>
             </Descriptions>

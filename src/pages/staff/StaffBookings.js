@@ -105,8 +105,10 @@ const CountdownInline = ({ booking }) => {
 const StaffBookings = () => {
   const [bookings, setBookings] = useState([]);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   const [filter, setFilter] = useState('all');
+
+  // Per-card alert state: { [bookingId]: { type, text } }
+  const [cardMessages, setCardMessages] = useState({});
 
   const [deductModalOpen, setDeductModalOpen] = useState(false);
   const [selectedBookingId, setSelectedBookingId] = useState(null);
@@ -127,15 +129,43 @@ const StaffBookings = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Set a message for a specific card that auto-dismisses after 4s
+  const setCardMessage = (bookingId, type, text) => {
+    setCardMessages((m) => ({
+      ...m,
+      [bookingId]: { type, text },
+    }));
+    setTimeout(() => {
+      setCardMessages((m) => {
+        if (!m[bookingId]) return m;
+        const copy = { ...m };
+        delete copy[bookingId];
+        return copy;
+      });
+    }, 4000);
+  };
+
+  const clearCardMessage = (bookingId) => {
+    setCardMessages((m) => {
+      if (!m[bookingId]) return m;
+      const copy = { ...m };
+      delete copy[bookingId];
+      return copy;
+    });
+  };
+
   const act = async (id, action, body = null) => {
     setError('');
-    setMessage('');
     try {
       await api.put(`/bookings/${id}/${action}`, body || {});
-      setMessage(`Booking ${action} successful.`);
+      setCardMessage(id, 'success', `Booking ${action} successful.`);
       loadBookings();
     } catch (err) {
-      setError(err.response?.data?.error || `Failed to ${action}`);
+      setCardMessage(
+        id,
+        'error',
+        err.response?.data?.error || `Failed to ${action}`
+      );
     }
   };
 
@@ -226,15 +256,7 @@ const StaffBookings = () => {
           />
         </div>
 
-        {message && (
-          <Alert
-            message={message}
-            type="success"
-            showIcon
-            style={{ marginBottom: 20 }}
-            closable
-          />
-        )}
+        {/* Global error (page-level, not card-level) */}
         {error && (
           <Alert
             message={error}
@@ -242,6 +264,7 @@ const StaffBookings = () => {
             showIcon
             style={{ marginBottom: 20 }}
             closable
+            onClose={() => setError('')}
           />
         )}
 
@@ -268,6 +291,7 @@ const StaffBookings = () => {
               bg: '#C4BBAF20',
               label: b.status,
             };
+            const cardMsg = cardMessages[b._id];
 
             return (
               <Card
@@ -412,6 +436,22 @@ const StaffBookings = () => {
 
                 <CountdownInline booking={b} />
 
+                {/* Per-card alert — appears here, right above the action buttons */}
+                {cardMsg && (
+                  <Alert
+                    message={cardMsg.text}
+                    type={cardMsg.type}
+                    showIcon
+                    closable
+                    onClose={() => clearCardMessage(b._id)}
+                    style={{
+                      marginTop: 12,
+                      marginBottom: 12,
+                      borderRadius: 8,
+                    }}
+                  />
+                )}
+
                 <div
                   style={{
                     display: 'flex',
@@ -463,7 +503,7 @@ const StaffBookings = () => {
                     </>
                   )}
 
-                  {b.status === 'checked_in' && (
+                  {b.status === 'checked_in' && b.paymentStatus === 'paid' && (
                     <Button
                       type="primary"
                       style={{
@@ -473,6 +513,21 @@ const StaffBookings = () => {
                       onClick={() => act(b._id, 'complete')}
                     >
                       Complete
+                    </Button>
+                  )}
+
+                  {b.status === 'checked_in' && b.paymentStatus !== 'paid' && (
+                    <Button
+                      disabled
+                      icon={<ExclamationCircleOutlined />}
+                      style={{
+                        background: '#C4BBAF',
+                        borderColor: '#C4BBAF',
+                        color: '#FAFAF8',
+                        cursor: 'not-allowed',
+                      }}
+                    >
+                      Complete (Balance Due)
                     </Button>
                   )}
 

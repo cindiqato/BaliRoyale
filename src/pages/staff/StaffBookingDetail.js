@@ -193,7 +193,6 @@ export default function StaffBookingDetail() {
     );
   };
 
-  // Compute verified totals
   const verifiedPayments = payments.filter(
     (p) => p.status === 'verified' && p.type !== 'refund'
   );
@@ -265,8 +264,7 @@ export default function StaffBookingDetail() {
                 <span>
                   <strong>
                     Guest's payment hold expires in {formatCountdown(remaining)}
-                  </strong>{' '}
-                  — after this, the slot frees up if no payment is submitted.
+                  </strong>
                 </span>
               }
               type="warning"
@@ -284,8 +282,7 @@ export default function StaffBookingDetail() {
             <Alert
               message={
                 <span>
-                  <strong>Payment timeout.</strong> The guest did not submit a
-                  payment within 15 minutes. The slot has been released.
+                  <strong>Payment timeout.</strong> The slot has been released.
                 </span>
               }
               type="error"
@@ -298,9 +295,7 @@ export default function StaffBookingDetail() {
             <Alert
               message={
                 <span>
-                  <strong>Awaiting payment verification.</strong> Once you
-                  verify the guest's payment, this booking will be automatically
-                  confirmed.
+                  <strong>Awaiting payment verification.</strong>
                 </span>
               }
               type="info"
@@ -436,8 +431,7 @@ export default function StaffBookingDetail() {
 
               {awaitingPayment && (
                 <Text style={{ color: C.gray }}>
-                  Waiting for the guest to submit payment. The booking will
-                  auto-confirm once the payment is verified.
+                  Waiting for the guest to submit payment.
                 </Text>
               )}
 
@@ -610,6 +604,17 @@ export default function StaffBookingDetail() {
             <Title level={5} style={{ color: C.green, marginTop: 0 }}>
               Pricing Breakdown
             </Title>
+            <Text
+              style={{
+                display: 'block',
+                color: C.gray,
+                fontSize: 12,
+                fontStyle: 'italic',
+                marginBottom: 12,
+              }}
+            >
+              These are the original calculated amounts at booking time.
+            </Text>
             <Descriptions
               column={1}
               size="small"
@@ -629,10 +634,10 @@ export default function StaffBookingDetail() {
                   ₱{booking.pricing?.totalAmount?.toLocaleString()}
                 </strong>
               </Descriptions.Item>
-              <Descriptions.Item label="Down Payment">
+              <Descriptions.Item label="Initial Down Payment">
                 ₱{booking.pricing?.downPayment?.toLocaleString()}
               </Descriptions.Item>
-              <Descriptions.Item label="Balance Due">
+              <Descriptions.Item label="Initial Balance Due">
                 ₱{booking.pricing?.balanceDue?.toLocaleString()}
               </Descriptions.Item>
             </Descriptions>

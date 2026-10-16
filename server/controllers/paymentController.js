@@ -53,24 +53,19 @@ const computeExpectedAmount = (booking, type, alreadyPaid) => {
   return 0;
 };
 
-// Determine which payment types are allowed based on booking state
 const getAllowedTypes = (booking) => {
-  // Pending and unpaid → initial payment
   if (booking.status === 'pending' && booking.paymentStatus === 'unpaid') {
     return ['down_payment', 'full_payment'];
   }
-  // Confirmed / checked_in with a remaining balance → balance payment only
   if (
     ['confirmed', 'checked_in'].includes(booking.status) &&
     booking.paymentStatus !== 'paid'
   ) {
     return ['balance'];
   }
-  // Pending but partial (down payment submitted) → balance payment
   if (booking.status === 'pending' && booking.paymentStatus === 'partial') {
     return ['balance'];
   }
-  // Paid, cancelled, completed, no-show, timeout → nothing
   return [];
 };
 
@@ -84,14 +79,12 @@ const submitPayment = async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    // Reference number is required
     if (!referenceNo || !referenceNo.trim()) {
       return res.status(400).json({
         error: 'Reference number is required.',
       });
     }
 
-    // Proof image is required
     if (!req.file) {
       return res.status(400).json({
         error: 'Proof of payment (image or PDF) is required.',
@@ -117,7 +110,18 @@ const submitPayment = async (req, res) => {
       });
     }
 
-    // Enforce allowed types based on booking state
+    // Reject if there's already a pending payment for this booking
+    const existingPending = await PaymentModel.findOne({
+      booking: booking._id,
+      status: 'pending',
+    });
+
+    if (existingPending) {
+      return res.status(400).json({
+        error: 'You already have a payment awaiting verification for this booking.',
+      });
+    }
+
     const allowedTypes = getAllowedTypes(booking);
 
     if (allowedTypes.length === 0) {
@@ -132,7 +136,6 @@ const submitPayment = async (req, res) => {
     }
 
     if (!allowedTypes.includes(type)) {
-      // Give a helpful message depending on what they tried vs what's allowed
       if (type === 'balance' && allowedTypes.includes('down_payment')) {
         return res.status(400).json({
           error: 'The balance payment is only available after the booking has been confirmed. Please pay the down payment or the full amount instead.',

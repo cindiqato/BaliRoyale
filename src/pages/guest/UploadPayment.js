@@ -50,7 +50,6 @@ export default function UploadPayment() {
   });
   const [file, setFile] = useState(null);
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [remaining, setRemaining] = useState(null);
 
@@ -79,7 +78,6 @@ export default function UploadPayment() {
     reloadedOnExpiry.current = false;
   }, [id]);
 
-  // Countdown
   useEffect(() => {
     if (
       !booking ||
@@ -103,7 +101,6 @@ export default function UploadPayment() {
     return () => clearInterval(interval);
   }, [booking]);
 
-  // Auto-fill amount whenever the payment type or booking/payments change
   useEffect(() => {
     if (!booking) return;
 
@@ -121,7 +118,6 @@ export default function UploadPayment() {
     setForm((f) => ({ ...f, amount: auto ? String(auto) : '' }));
   }, [form.type, booking, payments]);
 
-  // Reload once on expiry
   useEffect(() => {
     if (
       remaining === 0 &&
@@ -135,7 +131,6 @@ export default function UploadPayment() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining]);
 
-  // If we're in balance mode, default the form type to "balance"
   useEffect(() => {
     if (!booking) return;
     const isBalancePayment =
@@ -160,7 +155,6 @@ export default function UploadPayment() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    setMessage('');
 
     if (!file) {
       setError('Please upload your proof of payment (image or PDF).');
@@ -188,7 +182,8 @@ export default function UploadPayment() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      setMessage('Payment submitted! Awaiting staff verification.');
+      // No success message — the pending state will hide the form and show
+      // the blue "Payment submitted" alert on reload.
       setForm((f) => ({ ...f, referenceNo: '' }));
       setFile(null);
       const fileInput = document.getElementById('proof-file-input');
@@ -267,8 +262,6 @@ export default function UploadPayment() {
     },
   ];
 
-  // ----- Render -----
-
   if (!booking) {
     return (
       <div
@@ -302,7 +295,12 @@ export default function UploadPayment() {
     (['confirmed', 'checked_in'].includes(booking.status) &&
       booking.paymentStatus !== 'paid');
 
-  const canPay = isInitialPayment || isBalancePayment;
+  const canPay =
+    !hasPendingPayment &&
+    !isPaid &&
+    !isExpired &&
+    !isCancelled &&
+    (isInitialPayment || isBalancePayment);
 
   return (
     <div
@@ -336,7 +334,7 @@ export default function UploadPayment() {
             border: `1px solid ${C.border}`,
           }}
         >
-          {isNew && timerActive && (
+          {isNew && timerActive && !hasPendingPayment && (
             <Alert
               icon={<CheckCircleOutlined />}
               message="Slot reserved! Complete your down payment to confirm."
@@ -346,7 +344,7 @@ export default function UploadPayment() {
             />
           )}
 
-          {timerActive && (
+          {timerActive && !hasPendingPayment && (
             <Alert
               icon={<ClockCircleOutlined />}
               message={
@@ -369,13 +367,7 @@ export default function UploadPayment() {
           {hasPendingPayment && !isExpired && (
             <Alert
               icon={<InfoCircleOutlined />}
-              message={
-                <span>
-                  <strong>Payment submitted.</strong> Awaiting staff
-                  verification. Your booking will be confirmed once the payment
-                  is verified.
-                </span>
-              }
+              message="Payment submitted. Awaiting staff verification."
               type="info"
               showIcon
               style={{ marginBottom: 16, borderRadius: 8 }}
@@ -464,14 +456,6 @@ export default function UploadPayment() {
               style={{ marginBottom: '16px' }}
             />
           )}
-          {message && (
-            <Alert
-              message={message}
-              type="success"
-              showIcon
-              style={{ marginBottom: '16px' }}
-            />
-          )}
 
           {!canPay ? (
             <div style={{ textAlign: 'center', padding: '20px 0' }}>
@@ -490,7 +474,7 @@ export default function UploadPayment() {
                   </Button>
                 </Link>
               )}
-              {isCancelled && (
+              {isCancelled && !hasPendingPayment && (
                 <Link to="/guest/bookings">
                   <Button
                     style={{

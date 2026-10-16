@@ -17,28 +17,21 @@ const transporter = nodemailer.createTransport({
   },
 });
 
-// Verify connection on startup
-transporter.verify((err, success) => {
+// Verify connection on startup — silent on success
+transporter.verify((err) => {
   if (err) {
     console.log('SMTP connection error:', err.message);
-  } else {
-    console.log('SMTP ready — emails can be sent');
   }
 });
 
 const sendBookingEmail = async ({ to, subject, html }) => {
-  console.log('--- sendBookingEmail called ---');
-  console.log('  to:', to);
-  console.log('  subject:', subject);
-
   try {
-    const info = await transporter.sendMail({
+    await transporter.sendMail({
       from: `"Bali Royale" <${GMAIL_USER}>`,
       to,
       subject,
       html,
     });
-    console.log('Email sent:', info.response);
     return true;
   } catch (err) {
     console.error('Email send error:', err.message);

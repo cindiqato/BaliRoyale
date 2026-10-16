@@ -1,4 +1,4 @@
-require('dotenv').config({ path: '../.env' });
+require('dotenv').config({ path: '../.env', quiet: true });
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -33,8 +33,6 @@ const utcMidnight = (date) =>
     Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
   );
 
-// Generates a booking reference identical in format to the live system:
-// BR-{6-digit timestamp slice}-{6-char alnum}
 const generateRef = () => {
   const random = Math.random().toString(36).substring(2, 8).toUpperCase();
   const stamp = String(Date.now()).slice(-6);
@@ -46,7 +44,6 @@ const generateRef = () => {
 const seed = async () => {
   try {
     await mongoose.connect(MONGO_URI);
-    console.log('Connected to MongoDB');
 
     await Promise.all([
       User.deleteMany({}),
@@ -56,7 +53,6 @@ const seed = async () => {
       Archive.deleteMany({}),
       AuditLog.deleteMany({}),
     ]);
-    console.log('Cleared all collections');
 
     // ---------- USERS ----------
 
@@ -88,8 +84,6 @@ const seed = async () => {
     const admin = users.find((u) => u.role === 'admin');
     const staff = users.filter((u) => u.role === 'staff');
     const guests = users.filter((u) => u.role === 'guest');
-
-    console.log(`Inserted ${users.length} users`);
 
     // ---------- PACKAGES ----------
 
@@ -138,8 +132,6 @@ const seed = async () => {
       },
     ]);
 
-    console.log(`Inserted ${packages.length} packages`);
-
     // ---------- BOOKINGS ----------
 
     const calcPricing = (pkg, guestCount) => {
@@ -157,7 +149,6 @@ const seed = async () => {
     const HOLD_MINUTES = 15;
 
     const bookingDefs = [
-      // ---------- COMPLETED (12) ----------
       { guest: 0, pkg: 0, days: -60, guests: 10, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
       { guest: 1, pkg: 1, days: -58, guests: 12, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
       { guest: 2, pkg: 2, days: -52, guests: 8,  status: 'completed', payment: 'full_paid',  deposit: 'returned' },
@@ -171,37 +162,28 @@ const seed = async () => {
       { guest: 0, pkg: 5, days: -15, guests: 28, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
       { guest: 1, pkg: 3, days: -10, guests: 12, status: 'completed', payment: 'full_paid',  deposit: 'returned' },
 
-      // ---------- CANCELLED WITH REFUND (3) ----------
       { guest: 2, pkg: 0, days: -8,  guests: 10, status: 'cancelled', payment: 'refunded', cancelReason: 'Change of plans' },
       { guest: 3, pkg: 1, days: -6,  guests: 12, status: 'cancelled', payment: 'refunded', cancelReason: 'Family emergency' },
       { guest: 4, pkg: 2, days: -5,  guests: 10, status: 'cancelled', payment: 'refunded', cancelReason: 'Weather concerns' },
 
-      // ---------- CANCELLED NO PAYMENT (1) ----------
       { guest: 5, pkg: 0, days: -4, guests: 10, status: 'cancelled', payment: 'unpaid', cancelReason: 'Found another venue' },
 
-      // ---------- NO-SHOW (1) ----------
       { guest: 6, pkg: 1, days: -3, guests: 10, status: 'no_show', payment: 'down_paid', deposit: 'deducted', depositAmount: 3000, depositReason: 'No-show - deposit forfeited' },
 
-      // ---------- CHECKED-IN (2) ----------
       { guest: 7, pkg: 3, days: 0,  guests: 15, status: 'checked_in', payment: 'full_paid', deposit: 'held' },
       { guest: 8, pkg: 1, days: 0,  guests: 10, status: 'checked_in', payment: 'full_paid', deposit: 'held' },
 
-      // ---------- CONFIRMED (4) ----------
       { guest: 9, pkg: 0, days: 7,  guests: 10, status: 'confirmed', payment: 'full_paid', deposit: 'held' },
       { guest: 0, pkg: 2, days: 12, guests: 10, status: 'confirmed', payment: 'down_paid', deposit: 'held' },
       { guest: 1, pkg: 0, days: 18, guests: 12, status: 'confirmed', payment: 'down_paid', deposit: 'held' },
       { guest: 2, pkg: 4, days: 25, guests: 20, status: 'confirmed', payment: 'down_paid', deposit: 'held' },
 
-      // ---------- RESCHEDULED (1) ----------
       { guest: 3, pkg: 3, days: 30, guests: 12, status: 'confirmed', payment: 'full_paid', deposit: 'held', rescheduled: true },
 
-      // ---------- PENDING WITH ACTIVE HOLD (1) ----------
       { guest: 4, pkg: 2, days: 40, guests: 10, status: 'pending', payment: 'hold_active' },
 
-      // ---------- PAYMENT TIMEOUT (1) ----------
       { guest: 5, pkg: 0, days: 45, guests: 10, status: 'payment_timeout', payment: 'expired' },
 
-      // ---------- PENDING WITH PAYMENT SUBMITTED (1) ----------
       { guest: 6, pkg: 1, days: 50, guests: 10, status: 'pending', payment: 'payment_submitted' },
     ];
 
@@ -416,7 +398,6 @@ const seed = async () => {
       insertedBookings.push(booking);
     }
 
-    // Insert bookings + their payments
     const savedBookings = [];
     for (const b of insertedBookings) {
       const paymentsToInsert = b._paymentsToInsert;
@@ -469,8 +450,6 @@ const seed = async () => {
       savedBookings.push(savedBooking);
     }
 
-    console.log(`Inserted ${savedBookings.length} bookings`);
-
     // ---------- ARCHIVES ----------
 
     const toArchive = [savedBookings[2], savedBookings[3]];
@@ -487,7 +466,7 @@ const seed = async () => {
       await b.save();
     }
 
-    const guestToArchive = guests[guests.length - 1]; // Buknoy
+    const guestToArchive = guests[guests.length - 1];
     await Archive.create({
       originalModel: 'users',
       originalId: guestToArchive._id,
@@ -498,8 +477,6 @@ const seed = async () => {
     });
     guestToArchive.isArchived = true;
     await guestToArchive.save();
-
-    console.log('Inserted 3 archives');
 
     // ---------- AUDIT LOGS ----------
 
@@ -529,30 +506,7 @@ const seed = async () => {
       }))
     );
 
-    console.log(`Inserted ${logs.length} audit log entries`);
-
-    // ---------- Report ----------
-
-    const counts = {
-      users: await User.countDocuments(),
-      packages: await Package.countDocuments(),
-      bookings: await Booking.countDocuments(),
-      payments: await Payment.countDocuments(),
-      archives: await Archive.countDocuments(),
-      auditlogs: await AuditLog.countDocuments(),
-    };
-
-    console.log('\n--- SEED COMPLETE ---');
-    console.log(`Users:      ${counts.users}`);
-    console.log(`Packages:   ${counts.packages}`);
-    console.log(`Bookings:   ${counts.bookings}`);
-    console.log(`Payments:   ${counts.payments}`);
-    console.log(`Archives:   ${counts.archives}`);
-    console.log(`Audit logs: ${counts.auditlogs}`);
-    console.log('\nDemo login credentials:');
-    console.log('Admin  → admin.bali@yopmail.com  / admin00');
-    console.log('Staff  → staff1.bali@yopmail.com / staff00');
-    console.log('Guest  → guest1.bali@yopmail.com / guest00');
+    console.log('Database has been reset.');
 
     await mongoose.disconnect();
     process.exit(0);
