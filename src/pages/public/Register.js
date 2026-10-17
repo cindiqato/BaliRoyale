@@ -1,23 +1,22 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../api/axios';
-import { 
-  Card, 
-  Input, 
-  Button, 
-  Typography, 
-  Alert, 
-  Row, 
-  Col, 
-  Space 
+import {
+  Card,
+  Input,
+  Button,
+  Typography,
+  Alert,
+  Row,
+  Col,
 } from 'antd';
-import { 
-  UserOutlined, 
-  MailOutlined, 
-  LockOutlined, 
-  PhoneOutlined, 
-  HomeOutlined, 
-  UserAddOutlined 
+import {
+  UserOutlined,
+  MailOutlined,
+  LockOutlined,
+  PhoneOutlined,
+  HomeOutlined,
+  UserAddOutlined,
 } from '@ant-design/icons';
 
 const { Title, Text, Paragraph } = Typography;
@@ -59,13 +58,13 @@ export default function Register() {
 
   return (
     <div style={{ maxWidth: '520px', margin: '40px auto', padding: '0 16px' }}>
-      <Card 
-        style={{ 
-          borderRadius: '10px', 
-          background: '#FAFAF8', 
+      <Card
+        style={{
+          borderRadius: '10px',
+          background: '#FAFAF8',
           border: '1px solid #E2DCD5',
           boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          padding: '12px 8px'
+          padding: '12px 8px',
         }}
       >
         <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -77,15 +76,32 @@ export default function Register() {
           </Paragraph>
         </div>
 
-        {error && <Alert message={error} type="error" showIcon style={{ marginBottom: '20px' }} />}
-        {success && <Alert message={success} type="success" showIcon style={{ marginBottom: '20px' }} />}
+        {error && (
+          <Alert
+            message={error}
+            type="error"
+            showIcon
+            style={{ marginBottom: '20px' }}
+          />
+        )}
+        {success && (
+          <Alert
+            message={success}
+            type="success"
+            showIcon
+            style={{ marginBottom: '20px' }}
+          />
+        )}
 
         <form onSubmit={handleSubmit}>
-          {/* First Name & Last Name */}
           <Row gutter={12}>
             <Col xs={24} sm={12}>
               <div style={{ marginBottom: '16px' }}>
-                <label><Text strong style={{ color: '#333' }}>First Name</Text></label>
+                <label>
+                  <Text strong style={{ color: '#333' }}>
+                    First Name
+                  </Text>
+                </label>
                 <Input
                   prefix={<UserOutlined style={{ color: '#8A7A68' }} />}
                   type="text"
@@ -101,7 +117,11 @@ export default function Register() {
             </Col>
             <Col xs={24} sm={12}>
               <div style={{ marginBottom: '16px' }}>
-                <label><Text strong style={{ color: '#333' }}>Last Name</Text></label>
+                <label>
+                  <Text strong style={{ color: '#333' }}>
+                    Last Name
+                  </Text>
+                </label>
                 <Input
                   prefix={<UserOutlined style={{ color: '#8A7A68' }} />}
                   type="text"
@@ -117,9 +137,12 @@ export default function Register() {
             </Col>
           </Row>
 
-          {/* Email */}
           <div style={{ marginBottom: '16px' }}>
-            <label><Text strong style={{ color: '#333' }}>Email Address</Text></label>
+            <label>
+              <Text strong style={{ color: '#333' }}>
+                Email Address
+              </Text>
+            </label>
             <Input
               prefix={<MailOutlined style={{ color: '#8A7A68' }} />}
               type="email"
@@ -133,9 +156,12 @@ export default function Register() {
             />
           </div>
 
-          {/* Password */}
           <div style={{ marginBottom: '16px' }}>
-            <label><Text strong style={{ color: '#333' }}>Password</Text></label>
+            <label>
+              <Text strong style={{ color: '#333' }}>
+                Password
+              </Text>
+            </label>
             <Input.Password
               prefix={<LockOutlined style={{ color: '#8A7A68' }} />}
               name="password"
@@ -148,9 +174,15 @@ export default function Register() {
             />
           </div>
 
-          {/* Phone (Optional) */}
           <div style={{ marginBottom: '16px' }}>
-            <label><Text strong style={{ color: '#333' }}>Phone Number <Text type="secondary" style={{ fontWeight: 'normal' }}>(optional)</Text></Text></label>
+            <label>
+              <Text strong style={{ color: '#333' }}>
+                Phone Number{' '}
+                <Text type="secondary" style={{ fontWeight: 'normal' }}>
+                  (optional)
+                </Text>
+              </Text>
+            </label>
             <Input
               prefix={<PhoneOutlined style={{ color: '#8A7A68' }} />}
               type="text"
@@ -163,9 +195,15 @@ export default function Register() {
             />
           </div>
 
-          {/* Address (Optional) */}
           <div style={{ marginBottom: '24px' }}>
-            <label><Text strong style={{ color: '#333' }}>Address <Text type="secondary" style={{ fontWeight: 'normal' }}>(optional)</Text></Text></label>
+            <label>
+              <Text strong style={{ color: '#333' }}>
+                Address{' '}
+                <Text type="secondary" style={{ fontWeight: 'normal' }}>
+                  (optional)
+                </Text>
+              </Text>
+            </label>
             <Input
               prefix={<HomeOutlined style={{ color: '#8A7A68' }} />}
               type="text"
@@ -178,30 +216,28 @@ export default function Register() {
             />
           </div>
 
-          {/* Submit Button */}
-          <Button 
-            type="primary" 
-            htmlType="submit" 
-            size="large" 
-            block 
+          <Button
+            type="primary"
+            htmlType="submit"
+            size="large"
+            block
             loading={loading}
             icon={<UserAddOutlined />}
-            style={{ 
-              background: '#3A4D39', 
-              borderColor: '#3A4D39', 
+            style={{
+              background: '#3A4D39',
+              borderColor: '#3A4D39',
               color: '#FAFAF8',
               borderRadius: '6px',
-              fontWeight: '500'
+              fontWeight: '500',
             }}
           >
             {loading ? 'Registering...' : 'Register Account'}
           </Button>
         </form>
 
-        {/* Footer Link */}
         <div style={{ textAlign: 'center', marginTop: '20px' }}>
           <Text style={{ color: '#6E5A48' }}>
-            Already have an account? {' '}
+            Already have an account?{' '}
             <Link to="/login" style={{ color: '#4F6F52', fontWeight: 'bold' }}>
               Login here
             </Link>

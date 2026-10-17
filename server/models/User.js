@@ -8,8 +8,8 @@ const UserSchema = new mongoose.Schema(
     password: { type: String, required: true },
     phone: { type: String },
     address: { type: String },
-    role: { type: String, default: 'guest' },
-    status: { type: String, default: 'active' },
+    role: { type: String, default: 'guest' }, // admin | staff | guest
+    status: { type: String, default: 'active' }, // <-- THIS WAS MISSING
     resetToken: { type: String },
     resetExpires: { type: Date },
     isArchived: { type: Boolean, default: false },

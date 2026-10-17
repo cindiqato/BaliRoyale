@@ -75,6 +75,8 @@ const seed = async () => {
     const hashedUsers = await Promise.all(
       rawUsers.map(async (u) => ({
         ...u,
+        status: 'active', // Explicitly set status
+        isArchived: false,
         password: await bcrypt.hash(u.password, 10),
       }))
     );
@@ -94,6 +96,7 @@ const seed = async () => {
         baseRate: 7800, includedPax: 10, maxPax: 20, excessPaxRate: 350, bedrooms: 1,
         amenities: ['Pool', 'Kubo', 'Grill Station'],
         inclusions: ['Entrance', 'Use of amenities'],
+        status: 'active', isArchived: false,
       },
       {
         name: 'Night Tour', description: 'Overnight exclusive resort use',
@@ -101,6 +104,7 @@ const seed = async () => {
         baseRate: 8800, includedPax: 10, maxPax: 20, excessPaxRate: 350, bedrooms: 2,
         amenities: ['Pool', 'Kubo', 'Grill Station', 'Air-conditioned rooms'],
         inclusions: ['Entrance', 'Use of amenities', 'Overnight stay'],
+        status: 'active', isArchived: false,
       },
       {
         name: '21H Weekday', description: '21-hour use (Mon-Fri)',
@@ -108,6 +112,7 @@ const seed = async () => {
         baseRate: 12800, includedPax: 10, maxPax: 20, excessPaxRate: 350, bedrooms: 2,
         amenities: ['Pool', 'Kubo', 'Grill Station', 'Air-conditioned rooms'],
         inclusions: ['Entrance', 'Use of amenities', 'Overnight stay'],
+        status: 'active', isArchived: false,
       },
       {
         name: '21H Weekend', description: '21-hour use (Sat-Sun)',
@@ -115,6 +120,7 @@ const seed = async () => {
         baseRate: 14800, includedPax: 10, maxPax: 20, excessPaxRate: 350, bedrooms: 2,
         amenities: ['Pool', 'Kubo', 'Grill Station', 'Air-conditioned rooms'],
         inclusions: ['Entrance', 'Use of amenities', 'Overnight stay'],
+        status: 'active', isArchived: false,
       },
       {
         name: '20pax (21H)', description: '21-hour use for 20 guests',
@@ -122,6 +128,7 @@ const seed = async () => {
         baseRate: 18800, includedPax: 20, maxPax: 30, excessPaxRate: 350, bedrooms: 2,
         amenities: ['Pool', 'Kubo', 'Grill Station', 'Air-conditioned rooms'],
         inclusions: ['Entrance', 'Use of amenities', 'Overnight stay'],
+        status: 'active', isArchived: false,
       },
       {
         name: '30pax (21H)', description: '21-hour use for 30 guests',
@@ -129,6 +136,7 @@ const seed = async () => {
         baseRate: 25800, includedPax: 30, maxPax: 40, excessPaxRate: 350, bedrooms: 3,
         amenities: ['Pool', 'Kubo', 'Grill Station', 'Air-conditioned rooms'],
         inclusions: ['Entrance', 'Use of amenities', 'Overnight stay'],
+        status: 'active', isArchived: false,
       },
     ]);
 
@@ -421,6 +429,7 @@ const seed = async () => {
           verifiedAt: p.verifiedAt,
           createdAt: p.submittedAt,
           updatedAt: p.verifiedAt,
+          isArchived: false,
         });
       }
 
@@ -443,6 +452,7 @@ const seed = async () => {
             status: 'verified',
             verifiedBy: staff[0]._id,
             verifiedAt: new Date(),
+            isArchived: false,
           });
         }
       }
@@ -482,17 +492,17 @@ const seed = async () => {
 
     const logs = [
       { action: 'confirm_booking',     details: 'Auto-confirmed multiple bookings after payment verification', targetModel: 'bookings' },
-      { action: 'verify_payment',      details: 'Verified multiple down and balance payments during setup',    targetModel: 'payments' },
-      { action: 'reject_payment',      details: 'Rejected fake reference payments',                            targetModel: 'payments' },
-      { action: 'archive_record',      details: 'Archived 2 past bookings and 1 user',                         targetModel: 'bookings' },
-      { action: 'approve_cancel',      details: 'Approved 4 cancellations',                                    targetModel: 'bookings' },
-      { action: 'issue_refund',        details: 'Issued refunds to 3 cancelled bookings with payments',        targetModel: 'payments' },
-      { action: 'approve_reschedule',  details: 'Approved 1 reschedule',                                       targetModel: 'bookings' },
-      { action: 'record_cash_payment', details: 'Recorded cash balance payments',                              targetModel: 'payments' },
-      { action: 'create_user',         details: 'Added 13 users',                                              targetModel: 'users' },
-      { action: 'create_package',      details: 'Added 6 packages',                                            targetModel: 'packages' },
-      { action: 'create_booking',      details: 'Added 25 bookings',                                           targetModel: 'bookings' },
-      { action: 'update_user',         details: 'Updated guest contact info',                                  targetModel: 'users' },
+      { action: 'verify_payment',      details: 'Verified multiple down and balance payments during setup',     targetModel: 'payments' },
+      { action: 'reject_payment',      details: 'Rejected fake reference payments',                             targetModel: 'payments' },
+      { action: 'archive_record',      details: 'Archived 2 past bookings and 1 user',                          targetModel: 'bookings' },
+      { action: 'approve_cancel',      details: 'Approved 4 cancellations',                                      targetModel: 'bookings' },
+      { action: 'issue_refund',        details: 'Issued refunds to 3 cancelled bookings with payments',          targetModel: 'payments' },
+      { action: 'approve_reschedule',  details: 'Approved 1 reschedule',                                          targetModel: 'bookings' },
+      { action: 'record_cash_payment', details: 'Recorded cash balance payments',                                 targetModel: 'payments' },
+      { action: 'create_user',         details: 'Added 13 users',                                                 targetModel: 'users' },
+      { action: 'create_package',      details: 'Added 6 packages',                                               targetModel: 'packages' },
+      { action: 'create_booking',      details: 'Added 25 bookings',                                              targetModel: 'bookings' },
+      { action: 'update_user',         details: 'Updated guest contact info',                                     targetModel: 'users' },
     ];
 
     await AuditLog.insertMany(

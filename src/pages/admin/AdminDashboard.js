@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Card, Row, Col, Statistic, Alert, Space } from 'antd';
+import { Card, Row, Col, Statistic, Alert } from 'antd';
 import {
   TeamOutlined,
   UserOutlined,

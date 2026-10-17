@@ -8,12 +8,18 @@ import {
 } from '@ant-design/icons';
 import { useAuth } from '../../context/AuthContext';
 import homeImage from '../../assets/home.png';
+import projectorImg from '../../assets/projector.png';
+import kitchenImg from '../../assets/kitchen.png';
+import bathroomImg from '../../assets/bathroom.png';
+import karaokeImg from '../../assets/karaoke.png';
 
 const C = {
   green: '#3A4D39',
   medium: '#4F6F52',
   gold: '#C5A46D',
   cream: '#F4F1EA',
+  offWhite: '#FAFAF8',
+  taupe: '#EEEAE3',
   white: '#FFFFFF',
   gray: '#6E5A48',
   border: '#E2DCD5',
@@ -52,6 +58,33 @@ const Home = () => {
       title: 'Easy Online Booking',
       description:
         'Browse packages, check availability, and reserve online.',
+    },
+  ];
+
+  const amenities = [
+    {
+      image: kitchenImg,
+      title: 'Spacious Kitchen',
+      description:
+        'A fully equipped kitchen with complete cookware, utensils, and modern appliances — perfect for preparing meals during your stay.',
+    },
+    {
+      image: karaokeImg,
+      title: 'Karaoke Room',
+      description:
+        'An entertainment room with a smart TV, free Wi-Fi access, and Netflix — great for relaxing with family and friends.',
+    },
+    {
+      image: bathroomImg,
+      title: 'Spacious Bathroom',
+      description:
+        'A generous bathroom with a warm and comfortable shower setup for a refreshing experience.',
+    },
+    {
+      image: projectorImg,
+      title: 'Projector Area',
+      description:
+        'A dedicated movie-viewing space with a projector for an immersive entertainment experience.',
     },
   ];
 
@@ -178,7 +211,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ABOUT */}
+      {/* ABOUT — cream */}
       <section
         style={{
           padding: '70px 20px',
@@ -227,11 +260,118 @@ const Home = () => {
         </p>
       </section>
 
-      {/* FEATURES */}
+      {/* RESORT AMENITIES — off-white */}
+      <section
+        style={{
+          padding: '70px 20px',
+          background: C.offWhite,
+          textAlign: 'center',
+        }}
+      >
+        <p
+          style={{
+            color: C.gold,
+            fontSize: 12,
+            fontWeight: 'bold',
+            letterSpacing: 4,
+            textTransform: 'uppercase',
+            margin: 0,
+          }}
+        >
+          What Awaits You
+        </p>
+
+        <h2
+          style={{
+            fontFamily: 'Georgia, serif',
+            fontSize: 'clamp(28px, 4vw, 42px)',
+            fontWeight: 400,
+            color: C.green,
+            margin: '15px 0 20px',
+          }}
+        >
+          Resort Amenities
+        </h2>
+
+        <p
+          style={{
+            maxWidth: 700,
+            margin: '0 auto 45px',
+            color: C.gray,
+            fontSize: 15,
+            lineHeight: 1.9,
+          }}
+        >
+          Everything you need for a comfortable and memorable stay — from a
+          fully equipped kitchen to entertainment spaces for the whole group.
+        </p>
+
+        <Row
+          gutter={[22, 22]}
+          align="stretch"
+          style={{ maxWidth: 1100, margin: '0 auto' }}
+        >
+          {amenities.map((item) => (
+            <Col xs={24} sm={12} lg={6} key={item.title}>
+              <div
+                style={{
+                  background: C.white,
+                  border: `1px solid ${C.border}`,
+                  borderRadius: 8,
+                  overflow: 'hidden',
+                  height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  style={{
+                    width: '100%',
+                    height: 180,
+                    objectFit: 'cover',
+                  }}
+                />
+                <div
+                  style={{
+                    padding: '20px 20px 25px',
+                    textAlign: 'center',
+                    flex: 1,
+                  }}
+                >
+                  <h3
+                    style={{
+                      fontFamily: 'Georgia, serif',
+                      color: C.green,
+                      fontSize: 19,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {item.title}
+                  </h3>
+                  <p
+                    style={{
+                      color: C.gray,
+                      fontSize: 14,
+                      lineHeight: 1.8,
+                      margin: 0,
+                    }}
+                  >
+                    {item.description}
+                  </p>
+                </div>
+              </div>
+            </Col>
+          ))}
+        </Row>
+      </section>
+
+      {/* WHY CHOOSE BALI ROYALE — taupe */}
       <section
         style={{
           padding: '70px 20px 90px',
-          background: '#EEEAE3',
+          background: C.taupe,
           textAlign: 'center',
         }}
       >
