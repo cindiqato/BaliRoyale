@@ -28,7 +28,6 @@ const C = {
   border: '#E2DCD5',
 };
 
-// Map package name → image. Falls back to home.png for unrecognized names.
 const getPackageImage = (name) => {
   const map = {
     'Day Tour': packageUno,

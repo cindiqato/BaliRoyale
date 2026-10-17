@@ -37,8 +37,6 @@ const Navbar = () => {
   const { user } = useAuth();
 
   const handleLogout = () => {
-    // Clear the session synchronously, then hard-reload to /login.
-    // This bypasses any React state race and lands on a fresh login page.
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('user');
     window.location.href = '/login';

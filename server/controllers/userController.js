@@ -235,7 +235,6 @@ const forgotPassword = async (req, res) => {
 
     const user = await UserModel.findOne({ email });
 
-    // Always respond with success to avoid leaking which emails exist
     if (!user) {
       return res.json({
         message: 'A reset link has been sent. Check your email inbox.',

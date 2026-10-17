@@ -75,7 +75,7 @@ const seed = async () => {
     const hashedUsers = await Promise.all(
       rawUsers.map(async (u) => ({
         ...u,
-        status: 'active', // Explicitly set status
+        status: 'active',
         isArchived: false,
         password: await bcrypt.hash(u.password, 10),
       }))
@@ -492,17 +492,17 @@ const seed = async () => {
 
     const logs = [
       { action: 'confirm_booking',     details: 'Auto-confirmed multiple bookings after payment verification', targetModel: 'bookings' },
-      { action: 'verify_payment',      details: 'Verified multiple down and balance payments during setup',     targetModel: 'payments' },
-      { action: 'reject_payment',      details: 'Rejected fake reference payments',                             targetModel: 'payments' },
-      { action: 'archive_record',      details: 'Archived 2 past bookings and 1 user',                          targetModel: 'bookings' },
-      { action: 'approve_cancel',      details: 'Approved 4 cancellations',                                      targetModel: 'bookings' },
-      { action: 'issue_refund',        details: 'Issued refunds to 3 cancelled bookings with payments',          targetModel: 'payments' },
-      { action: 'approve_reschedule',  details: 'Approved 1 reschedule',                                          targetModel: 'bookings' },
-      { action: 'record_cash_payment', details: 'Recorded cash balance payments',                                 targetModel: 'payments' },
-      { action: 'create_user',         details: 'Added 13 users',                                                 targetModel: 'users' },
-      { action: 'create_package',      details: 'Added 6 packages',                                               targetModel: 'packages' },
-      { action: 'create_booking',      details: 'Added 25 bookings',                                              targetModel: 'bookings' },
-      { action: 'update_user',         details: 'Updated guest contact info',                                     targetModel: 'users' },
+      { action: 'verify_payment',      details: 'Verified multiple down and balance payments during setup',    targetModel: 'payments' },
+      { action: 'reject_payment',      details: 'Rejected fake reference payments',                            targetModel: 'payments' },
+      { action: 'archive_record',      details: 'Archived 2 past bookings and 1 user',                         targetModel: 'bookings' },
+      { action: 'approve_cancel',      details: 'Approved 4 cancellations',                                    targetModel: 'bookings' },
+      { action: 'issue_refund',        details: 'Issued refunds to 3 cancelled bookings with payments',        targetModel: 'payments' },
+      { action: 'approve_reschedule',  details: 'Approved 1 reschedule',                                       targetModel: 'bookings' },
+      { action: 'record_cash_payment', details: 'Recorded cash balance payments',                              targetModel: 'payments' },
+      { action: 'create_user',         details: 'Added 13 users',                                              targetModel: 'users' },
+      { action: 'create_package',      details: 'Added 6 packages',                                            targetModel: 'packages' },
+      { action: 'create_booking',      details: 'Added 25 bookings',                                           targetModel: 'bookings' },
+      { action: 'update_user',         details: 'Updated guest contact info',                                  targetModel: 'users' },
     ];
 
     await AuditLog.insertMany(

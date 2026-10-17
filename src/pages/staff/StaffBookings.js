@@ -107,7 +107,6 @@ const StaffBookings = () => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
 
-  // Per-card alert state: { [bookingId]: { type, text } }
   const [cardMessages, setCardMessages] = useState({});
 
   const [deductModalOpen, setDeductModalOpen] = useState(false);
@@ -129,7 +128,6 @@ const StaffBookings = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Set a message for a specific card that auto-dismisses after 4s
   const setCardMessage = (bookingId, type, text) => {
     setCardMessages((m) => ({
       ...m,
@@ -256,7 +254,6 @@ const StaffBookings = () => {
           />
         </div>
 
-        {/* Global error (page-level, not card-level) */}
         {error && (
           <Alert
             message={error}
@@ -436,7 +433,6 @@ const StaffBookings = () => {
 
                 <CountdownInline booking={b} />
 
-                {/* Per-card alert — appears here, right above the action buttons */}
                 {cardMsg && (
                   <Alert
                     message={cardMsg.text}

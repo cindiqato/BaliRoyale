@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema(
     phone: { type: String },
     address: { type: String },
     role: { type: String, default: 'guest' }, // admin | staff | guest
-    status: { type: String, default: 'active' }, // <-- THIS WAS MISSING
+    status: { type: String, default: 'active' },
     resetToken: { type: String },
     resetExpires: { type: Date },
     isArchived: { type: Boolean, default: false },

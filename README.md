@@ -1,70 +1,61 @@
-# Getting Started with Create React App
+# Bali Royale: Private Resort Online Booking and Management System
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A web-based reservation and management system for **Bali Royale Private Resort** (Rodriguez, Rizal), built using the MERN stack.
 
-## Available Scripts
+## Tech Stack
+- **Frontend:** React.js, react-router-dom, axios, Ant Design
+- **Backend:** Node.js, Express.js
+- **Database:** MongoDB + Mongoose
+- **Authentication:** bcrypt, jsonwebtoken
+- **File Upload:** multer
+- **Email:** nodemailer
 
-In the project directory, you can run:
+## System Roles
+- **Guest:** Book packages, upload payments, view reservations, request cancel/reschedule.
+- **Staff:** Manage bookings, verify payments, check-in guests, manage requests and deposits.
+- **Admin:** Manage users, packages, archives, and view audit logs.
 
-### `npm start`
+## Local Setup Instructions
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 1. Install Dependencies
+Run this in the project root, and then inside the `server` folder:
+    npm install
+    cd server
+    npm install
+    cd ..
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 2. Environment Variables
+Create a file named `.env` inside the `server/` folder:
+    GMAIL_USER=your-email@gmail.com
+    GMAIL_PASS=your-16-char-app-password
 
-### `npm test`
+*(Note: Requires a Gmail App Password. If skipped, emails won't send but the system will still work).*
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+### 3. Database & Seed
+Ensure MongoDB is running on `localhost:27017`. Then, navigate to the server folder and run the seed script to populate the demo data:
+    cd server
+    node seed/seed.js
 
-### `npm run build`
+### 4. Run the Application
+Open **two separate terminals**.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**Terminal 1 (Backend):**
+    cd server
+    nodemon server.js
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+**Terminal 2 (Frontend):**
+    npm start
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+The app will open at `http://localhost:3000`.
 
-### `npm run eject`
+## Demo Credentials
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+| Role | Email | Password |
+| :--- | :--- | :--- |
+| **Admin** | admin.bali@yopmail.com  | admin00 |
+| **Staff** | staff1.bali@yopmail.com | staff00 |
+| **Guest** | guest1.bali@yopmail.com | guest00 |
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+*(Guests 2-10 use `guest2.bali@yopmail.com` through `guest10.bali@yopmail.com`).*
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+*You can check emails sent by the system by visiting [yopmail.com](https://yopmail.com/) and searching for the inbox name (e.g., `guest1.bali`).*

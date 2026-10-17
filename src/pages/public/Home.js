@@ -211,7 +211,7 @@ const Home = () => {
         </div>
       </section>
 
-      {/* ABOUT — cream */}
+      {/* ABOUT */}
       <section
         style={{
           padding: '70px 20px',
@@ -260,7 +260,7 @@ const Home = () => {
         </p>
       </section>
 
-      {/* RESORT AMENITIES — off-white */}
+      {/* RESORT AMENITIES */}
       <section
         style={{
           padding: '70px 20px',
@@ -367,7 +367,7 @@ const Home = () => {
         </Row>
       </section>
 
-      {/* WHY CHOOSE BALI ROYALE — taupe */}
+      {/* WHY CHOOSE BALI ROYALE */}
       <section
         style={{
           padding: '70px 20px 90px',

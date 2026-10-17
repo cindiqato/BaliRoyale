@@ -71,7 +71,6 @@ export default function UploadPayment() {
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -128,7 +127,6 @@ export default function UploadPayment() {
       const timeout = setTimeout(() => loadData(), 3000);
       return () => clearTimeout(timeout);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining]);
 
   useEffect(() => {
@@ -141,7 +139,6 @@ export default function UploadPayment() {
     if (isBalancePayment && form.type !== 'balance') {
       setForm((f) => ({ ...f, type: 'balance' }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [booking]);
 
   const formatCountdown = (ms) => {
@@ -182,8 +179,6 @@ export default function UploadPayment() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // No success message — the pending state will hide the form and show
-      // the blue "Payment submitted" alert on reload.
       setForm((f) => ({ ...f, referenceNo: '' }));
       setFile(null);
       const fileInput = document.getElementById('proof-file-input');

@@ -92,7 +92,6 @@ export default function StaffBookingDetail() {
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   useEffect(() => {
@@ -132,7 +131,6 @@ export default function StaffBookingDetail() {
       const timeout = setTimeout(() => loadData(), 3000);
       return () => clearTimeout(timeout);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [remaining]);
 
   const formatCountdown = (ms) => {
